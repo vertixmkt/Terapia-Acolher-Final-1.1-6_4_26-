@@ -207,6 +207,7 @@ Dentro do nível da cascata, prioriza quem não recebeu paciente há mais tempo 
 ## ❌ Ainda não feito
 
 - Notificação do terapeuta via **Telegram** (substituir ManyChat para terapeutas)
+- **Gerente de Operações (LLM + Telegram Bot)** — agente autônomo que monitora o sistema e se comunica com o Rodrigo via Telegram. Notificações proativas (pacientes pendentes, falhas, resumo diário) + respostas sob demanda ("como tá o matching?", "quem são os pendentes?", "pausa o matching"). Stack: Telegram Bot API + Claude API (Sonnet) + hooks no backend. Custo estimado: < $1/mês. Módulo isolado em `backend/src/services/operations-manager.ts`
 - Notificações por email ao terapeuta
 - Painel de relatórios e métricas avançadas
 - App mobile (portal do terapeuta)

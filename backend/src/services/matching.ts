@@ -299,15 +299,18 @@ async function findBestTherapist(patientId: number) {
     }
   }
 
+  // Fallback: se todos atingiram o limite diário, usar todos os candidatos
+  // (melhor atribuir do que deixar paciente parado)
+  const pool = available.length > 0 ? available : candidates
+
   if (available.length === 0) {
-    console.log(`[Matching] Todos os candidatos já atingiram limite diário para paciente ${patientId}`)
-    return null
+    console.log(`[Matching] Todos no limite diário para paciente ${patientId} — usando fallback (qualquer candidato com saldo)`)
   }
 
   // ── PASSO 5: Score de compatibilidade por keywords ────────────────────────
   // Combina motivo do paciente + abordagem + especialidades do terapeuta
   // Score = 50 (base) + 10 por categoria encontrada, max 100
-  const scored = available.map(t => ({
+  const scored = pool.map(t => ({
     therapist_id: t.id,
     score: computeScore(patient, t),
     reason: buildReason(patient, t),

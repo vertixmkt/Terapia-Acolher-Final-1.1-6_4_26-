@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Proposta: Gerente de Operacoes IA — Terapia Acolher</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1a1d2e 0%, #0f1117 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 48px 24px 36px;
+      text-align: center;
+    }
+
+    .header-badge {
+      display: inline-block;
+      padding: 4px 16px;
+      background: rgba(234, 88, 12, 0.12);
+      border: 1px solid rgba(234, 88, 12, 0.25);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fb923c;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #94a3b8;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 48px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .section-number {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(234, 88, 12, 0.12);
+      border: 1px solid rgba(234, 88, 12, 0.25);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fb923c;
+      flex-shrink: 0;
+    }
+
+    .section h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .section p, .section li {
+      font-size: 14px;
+      color: #cbd5e1;
+    }
+
+    .section ul {
+      padding-left: 20px;
+      margin-top: 8px;
+    }
+
+    .section li {
+      margin-bottom: 6px;
+    }
+
+    .text-block {
+      margin-bottom: 16px;
+    }
+
+    .highlight {
+      color: #fb923c;
+      font-weight: 600;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+      margin: 48px 0;
+    }
+
+    /* Flow diagram */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+      padding: 24px 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+
+    .flow-step {
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      text-align: center;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .flow-arrow {
+      font-size: 18px;
+      color: #4a5568;
+      padding: 0 6px;
+      flex-shrink: 0;
+    }
+
+    .flow-green { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; }
+    .flow-blue { background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); color: #60a5fa; }
+    .flow-purple { background: rgba(168,85,247,0.1); border: 1px solid rgba(168,85,247,0.2); color: #c084fc; }
+    .flow-orange { background: rgba(234,88,12,0.1); border: 1px solid rgba(234,88,12,0.2); color: #fb923c; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: rgba(234, 88, 12, 0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #fb923c;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #cbd5e1;
+    }
+
+    tr:hover td {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .price-highlight {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    /* Tags */
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tag-green { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+    .tag-red { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+    .tag-yellow { background: rgba(234,179,8,0.12); color: #facc15; border: 1px solid rgba(234,179,8,0.2); }
+    .tag-blue { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+    .tag-purple { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
+    .tag-orange { background: rgba(234,88,12,0.12); color: #fb923c; border: 1px solid rgba(234,88,12,0.2); }
+
+    /* Cards */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .card {
+      padding: 20px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+
+    .card-text {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    /* Pros/Cons */
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 640px) {
+      .pros-cons { grid-template-columns: 1fr; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    .pros-box, .cons-box {
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .pros-box {
+      background: rgba(34,197,94,0.04);
+      border: 1px solid rgba(34,197,94,0.12);
+    }
+
+    .cons-box {
+      background: rgba(239,68,68,0.04);
+      border: 1px solid rgba(239,68,68,0.12);
+    }
+
+    .pros-box h3 { color: #4ade80; font-size: 14px; margin-bottom: 10px; }
+    .cons-box h3 { color: #f87171; font-size: 14px; margin-bottom: 10px; }
+
+    .pros-box li { color: #a7f3d0; font-size: 13px; margin-bottom: 4px; }
+    .cons-box li { color: #fecaca; font-size: 13px; margin-bottom: 4px; }
+
+    /* Recommendation box */
+    .recommendation {
+      padding: 24px;
+      background: linear-gradient(135deg, rgba(234,88,12,0.06) 0%, rgba(168,85,247,0.06) 100%);
+      border: 1px solid rgba(234,88,12,0.15);
+      border-radius: 14px;
+      margin: 24px 0;
+    }
+
+    .recommendation h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fb923c;
+      margin-bottom: 12px;
+    }
+
+    .recommendation p {
+      font-size: 14px;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+    }
+
+    /* Chat examples */
+    .chat {
+      max-width: 500px;
+      margin: 20px 0;
+    }
+
+    .chat-msg {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 8px;
+      max-width: 85%;
+    }
+
+    .chat-user {
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: #93c5fd;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bot {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e2e8f0;
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .chat-label-user { color: #60a5fa; text-align: right; }
+    .chat-label-bot { color: #fb923c; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">Proposta Tecnica</div>
+  <h1>Gerente de Operacoes com IA</h1>
+  <p>Um agente inteligente que monitora o sistema de matching, analisa compatibilidade com IA real, e se comunica com voce pelo Telegram — 24h por dia, 7 dias por semana.</p>
+</div>
+
+<div class="container">
+
+  <!-- 1. O que e -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>O que e</h2>
+    </div>
+    <p class="text-block">Um modulo de inteligencia artificial integrado ao sistema Terapia Acolher que faz duas coisas:</p>
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-title">Matching Inteligente</div>
+        <div class="card-text">Substitui a busca por palavras-chave por uma analise real com IA. A LLM le a queixa do paciente e avalia qual terapeuta (abordagem, especialidade, experiencia) e mais indicado — como um profissional faria.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Gerente via Telegram</div>
+        <div class="card-text">Um assistente que monitora tudo em tempo real e fala com voce pelo Telegram. Envia alertas, resumos diarios, e responde perguntas sobre a operacao. Voce gerencia o sistema sem abrir o painel.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 2. Como funciona -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Como funciona</h2>
+    </div>
+
+    <p class="text-block" style="margin-bottom:20px;"><strong style="color:#f1f5f9;">Matching com IA:</strong></p>
+    <div class="flow">
+      <div class="flow-step flow-green">Paciente chega<br>com queixa</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step flow-blue">Filtros eliminatorios<br>(genero, turno, saldo)</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step flow-purple">IA analisa<br>queixa vs. perfil</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step flow-orange">Score real<br>com justificativa</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step flow-green">Match feito</div>
+    </div>
+
+    <p class="text-block" style="margin-top: 28px; margin-bottom:12px;"><strong style="color:#f1f5f9;">Exemplo de analise da IA:</strong></p>
+    <div class="card" style="border-left: 3px solid #fb923c;">
+      <div class="card-text">
+        <strong style="color:#f1f5f9;">Paciente:</strong> "Estou com muita ansiedade, insonia, e crises de panico no trabalho"<br><br>
+        <strong style="color:#f1f5f9;">Terapeuta Maria — TCC, especialista em Ansiedade e Estresse:</strong><br>
+        <span style="color:#4ade80;">Score: 94% — TCC e a abordagem mais indicada para ansiedade com panico. Especialidade em estresse complementa o quadro ocupacional.</span><br><br>
+        <strong style="color:#f1f5f9;">Terapeuta Joao — Psicanalise, especialista em Relacionamentos:</strong><br>
+        <span style="color:#facc15;">Score: 62% — Psicanalise pode ajudar a longo prazo, mas nao e a primeira indicacao para crises de panico agudas.</span>
+      </div>
+    </div>
+
+    <p class="text-block" style="margin-top: 28px; margin-bottom:12px;"><strong style="color:#f1f5f9;">Gerente via Telegram:</strong></p>
+    <div class="chat">
+      <div class="chat-label chat-label-bot">Gerente IA</div>
+      <div class="chat-msg chat-bot">Bom dia Rodrigo! Resumo de ontem: 14 matchings realizados, 2 pacientes pendentes (motivo generico), 0 falhas. Todos os terapeutas dentro do limite diario.</div>
+
+      <div class="chat-label chat-label-user" style="margin-top:12px;">Rodrigo</div>
+      <div class="chat-msg chat-user">Quem sao os pendentes?</div>
+
+      <div class="chat-label chat-label-bot">Gerente IA</div>
+      <div class="chat-msg chat-bot">1. Ana Paula (desde ontem 14h) — queixa: "quero melhorar minha vida". Score maximo atingido: 58% com Dra. Carla.<br>2. Ricardo (desde ontem 18h) — quer terapeuta homem, turno noite. So temos 2 homens com turno noite e ambos com saldo 0.</div>
+
+      <div class="chat-label chat-label-user" style="margin-top:12px;">Rodrigo</div>
+      <div class="chat-msg chat-user">Atribui a Ana Paula pra Dra. Carla mesmo</div>
+
+      <div class="chat-label chat-label-bot">Gerente IA</div>
+      <div class="chat-msg chat-bot">Feito! Ana Paula atribuida a Dra. Carla (58%). Dra. Carla foi notificada. Saldo: 11 &rarr; 10.</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 3. Modelos e custos -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Modelos disponiveis e custos</h2>
+    </div>
+
+    <p class="text-block">A IA e fornecida pela Anthropic (Claude). Existem 3 modelos, cada um com um nivel de inteligencia e custo diferente:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Modelo</th>
+          <th>Inteligencia</th>
+          <th>Velocidade</th>
+          <th>Preco/1M tokens (entrada)</th>
+          <th>Preco/1M tokens (saida)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-green">Haiku 4.5</span></td>
+          <td>Boa</td>
+          <td>Muito rapido (&lt;1s)</td>
+          <td>$0.80</td>
+          <td>$4.00</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">Sonnet 4.6</span></td>
+          <td>Muito boa</td>
+          <td>Rapido (~2s)</td>
+          <td>$3.00</td>
+          <td>$15.00</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple">Opus 4.6</span></td>
+          <td>Excepcional</td>
+          <td>Mais lento (~4s)</td>
+          <td>$5.00</td>
+          <td>$25.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="text-block" style="margin-top: 24px;"><strong style="color:#f1f5f9;">Custo mensal estimado por modelo</strong> (baseado em ~20 matchings/dia + operacao do gerente):</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Tarefa</th>
+          <th>Chamadas/dia</th>
+          <th><span class="tag tag-green">Haiku 4.5</span></th>
+          <th><span class="tag tag-blue">Sonnet 4.6</span></th>
+          <th><span class="tag tag-purple">Opus 4.6</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Matching com IA (score de compatibilidade)</td>
+          <td>~20</td>
+          <td>$1.50</td>
+          <td>$9.00</td>
+          <td>$15.00</td>
+        </tr>
+        <tr>
+          <td>Resumo diario no Telegram</td>
+          <td>1</td>
+          <td>$0.10</td>
+          <td>$0.60</td>
+          <td>$1.00</td>
+        </tr>
+        <tr>
+          <td>Alertas proativos</td>
+          <td>~5</td>
+          <td>$0.25</td>
+          <td>$1.50</td>
+          <td>$2.50</td>
+        </tr>
+        <tr>
+          <td>Perguntas e comandos via Telegram</td>
+          <td>~10</td>
+          <td>$0.50</td>
+          <td>$3.00</td>
+          <td>$5.00</td>
+        </tr>
+        <tr style="background: rgba(255,255,255,0.03);">
+          <td><strong style="color:#f1f5f9;">Total mensal</strong></td>
+          <td></td>
+          <td class="price-highlight" style="color:#4ade80;">~$2.35</td>
+          <td class="price-highlight" style="color:#60a5fa;">~$14.10</td>
+          <td class="price-highlight" style="color:#c084fc;">~$23.50</td>
+        </tr>
+        <tr style="background: rgba(255,255,255,0.03);">
+          <td><strong style="color:#f1f5f9;">Em reais (~R$5.50/USD)</strong></td>
+          <td></td>
+          <td class="price-highlight" style="color:#4ade80;">~R$13/mes</td>
+          <td class="price-highlight" style="color:#60a5fa;">~R$78/mes</td>
+          <td class="price-highlight" style="color:#c084fc;">~R$130/mes</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:12px; color:#64748b; margin-top:8px;">* Telegram Bot API e gratuito. O custo e apenas da IA (Claude API).</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 4. Pros e Contras por modelo -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Pros e contras de cada modelo</h2>
+    </div>
+
+    <!-- Haiku -->
+    <h3 style="color:#4ade80; font-size:16px; margin: 24px 0 12px; display:flex; align-items:center; gap:8px;">
+      <span class="tag tag-green">Haiku 4.5</span> — O economico
+    </h3>
+    <div class="pros-cons">
+      <div class="pros-box">
+        <h3>Pros</h3>
+        <ul>
+          <li>Custo minimo: ~R$13/mes</li>
+          <li>Resposta ultra rapida (&lt;1 segundo)</li>
+          <li>Suficiente para 90% das analises de compatibilidade</li>
+          <li>Ideal para alertas em tempo real</li>
+          <li>Melhor custo-beneficio para operacao diaria</li>
+        </ul>
+      </div>
+      <div class="cons-box">
+        <h3>Contras</h3>
+        <ul>
+          <li>Pode errar em queixas muito complexas ou ambiguas</li>
+          <li>Respostas mais curtas e menos elaboradas</li>
+          <li>Menos capacidade de raciocinio em situacoes incomuns</li>
+          <li>Pode nao captar nuances sutis (ex: "quero me entender melhor" → autoconhecimento)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Sonnet -->
+    <h3 style="color:#60a5fa; font-size:16px; margin: 32px 0 12px; display:flex; align-items:center; gap:8px;">
+      <span class="tag tag-blue">Sonnet 4.6</span> — O equilibrado
+    </h3>
+    <div class="pros-cons">
+      <div class="pros-box">
+        <h3>Pros</h3>
+        <ul>
+          <li>Excelente compreensao de queixas complexas</li>
+          <li>Respostas elaboradas e naturais no Telegram</li>
+          <li>Bom raciocinio para situacoes incomuns</li>
+          <li>Velocidade ainda boa (~2 segundos)</li>
+          <li>Capaz de gerar relatorios semanais detalhados</li>
+        </ul>
+      </div>
+      <div class="cons-box">
+        <h3>Contras</h3>
+        <ul>
+          <li>Custo 6x maior que o Haiku (~R$78/mes)</li>
+          <li>Levemente mais lento</li>
+          <li>Para matching simples, a diferenca de qualidade nem sempre justifica o custo</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Opus -->
+    <h3 style="color:#c084fc; font-size:16px; margin: 32px 0 12px; display:flex; align-items:center; gap:8px;">
+      <span class="tag tag-purple">Opus 4.6</span> — O premium
+    </h3>
+    <div class="pros-cons">
+      <div class="pros-box">
+        <h3>Pros</h3>
+        <ul>
+          <li>Inteligencia excepcional — o melhor modelo existente</li>
+          <li>Raciocinio profundo sobre casos complexos</li>
+          <li>Capaz de sugerir estrategias de negocio, nao so responder perguntas</li>
+          <li>Maximo de precisao em matching com queixas ambiguas</li>
+        </ul>
+      </div>
+      <div class="cons-box">
+        <h3>Contras</h3>
+        <ul>
+          <li>Custo 10x maior que o Haiku (~R$130/mes)</li>
+          <li>Mais lento (~4 segundos por resposta)</li>
+          <li>Excesso de capacidade para operacao diaria — e como usar um Formula 1 para ir ao mercado</li>
+          <li>O ganho de qualidade para matching e marginal comparado ao Sonnet</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 5. Comparativo direto -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Comparativo direto</h2>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Criterio</th>
+          <th><span class="tag tag-green">Haiku</span></th>
+          <th><span class="tag tag-blue">Sonnet</span></th>
+          <th><span class="tag tag-purple">Opus</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Custo mensal</td>
+          <td style="color:#4ade80; font-weight:600;">~R$13</td>
+          <td>~R$78</td>
+          <td>~R$130</td>
+        </tr>
+        <tr>
+          <td>Velocidade</td>
+          <td style="color:#4ade80; font-weight:600;">&lt;1s</td>
+          <td>~2s</td>
+          <td>~4s</td>
+        </tr>
+        <tr>
+          <td>Qualidade do matching</td>
+          <td>Boa</td>
+          <td style="color:#60a5fa; font-weight:600;">Muito boa</td>
+          <td>Excepcional</td>
+        </tr>
+        <tr>
+          <td>Conversas no Telegram</td>
+          <td>Respostas objetivas</td>
+          <td style="color:#60a5fa; font-weight:600;">Respostas naturais e elaboradas</td>
+          <td>Respostas profundas</td>
+        </tr>
+        <tr>
+          <td>Queixas ambiguas</td>
+          <td>Pode falhar</td>
+          <td>Boa interpretacao</td>
+          <td style="color:#c084fc; font-weight:600;">Excelente</td>
+        </tr>
+        <tr>
+          <td>Relatorios e estrategia</td>
+          <td>Basico</td>
+          <td>Bom</td>
+          <td style="color:#c084fc; font-weight:600;">Excelente</td>
+        </tr>
+        <tr>
+          <td>Custo-beneficio</td>
+          <td style="color:#4ade80; font-weight:600;">Melhor</td>
+          <td>Bom</td>
+          <td>Baixo</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 6. Recomendacao -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2>Nossa recomendacao</h2>
+    </div>
+
+    <div class="recommendation">
+      <h3>Estrategia hibrida: Haiku + Sonnet</h3>
+      <p><strong style="color:#4ade80;">Haiku</strong> para a operacao diaria — matching, alertas, resumos, comandos rapidos. Cobre 90% do uso.</p>
+      <p><strong style="color:#60a5fa;">Sonnet</strong> apenas para tarefas pontuais que exijam mais raciocinio — relatorios semanais, analise de tendencias, queixas muito complexas.</p>
+      <p style="margin-top: 12px;"><strong style="color:#fb923c;">Custo estimado dessa estrategia: ~R$20 a R$25/mes</strong></p>
+      <p style="font-size:13px; color:#94a3b8; margin-top: 8px;">Isso e menos que um cafezinho por dia — e voce ganha um gerente de operacoes 24h que nunca esquece, nunca atrasa, e nunca tira ferias.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 7. O que muda na pratica -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2>O que muda na pratica</h2>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Situacao</th>
+          <th>Hoje (sem IA)</th>
+          <th>Com o Gerente IA</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Matching de pacientes</td>
+          <td>Busca por palavras-chave (mecanico)</td>
+          <td><span class="tag tag-green">IA analisa queixa vs. perfil como um profissional</span></td>
+        </tr>
+        <tr>
+          <td>Paciente com queixa vaga</td>
+          <td>Score baixo, fica pendente</td>
+          <td><span class="tag tag-green">IA interpreta contexto e encontra match</span></td>
+        </tr>
+        <tr>
+          <td>Saber como esta a operacao</td>
+          <td>Abrir o painel admin no computador</td>
+          <td><span class="tag tag-green">Perguntar no Telegram a qualquer hora</span></td>
+        </tr>
+        <tr>
+          <td>Paciente pendente ha muito tempo</td>
+          <td>Voce descobre quando olha o painel</td>
+          <td><span class="tag tag-green">Alerta automatico no Telegram</span></td>
+        </tr>
+        <tr>
+          <td>Aprovar terapeuta</td>
+          <td>Entrar no painel, achar, clicar</td>
+          <td><span class="tag tag-green">"Aprova a Ana" no Telegram</span></td>
+        </tr>
+        <tr>
+          <td>Pausar matching</td>
+          <td>Entrar no painel, mudar configuracao</td>
+          <td><span class="tag tag-green">"Pausa o matching" no Telegram</span></td>
+        </tr>
+        <tr>
+          <td>Relatorio semanal</td>
+          <td>Nao existe</td>
+          <td><span class="tag tag-green">Enviado automaticamente toda segunda-feira</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 8. Infraestrutura -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">8</div>
+      <h2>Infraestrutura necessaria</h2>
+    </div>
+
+    <div class="cards-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="card">
+        <div class="card-title">Telegram Bot</div>
+        <div class="card-text">Criado via @BotFather em 5 minutos. <strong style="color:#4ade80;">Gratuito.</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Claude API</div>
+        <div class="card-text">Chave de API da Anthropic. Pagamento por uso (sem mensalidade fixa).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Servidor</div>
+        <div class="card-text">Roda no mesmo VPS que ja existe. <strong style="color:#4ade80;">Sem custo adicional.</strong></div>
+      </div>
+    </div>
+
+    <p class="text-block" style="margin-top: 16px; font-size: 13px; color: #94a3b8;">O modulo e totalmente isolado — nao mexe no matching atual nem no resto do sistema. Pode ser ligado e desligado a qualquer momento sem afetar a operacao.</p>
+  </div>
+
+</div>
+
+<div class="footer">
+  Terapia Acolher — Proposta: Gerente de Operacoes com IA — Marco/2026
+</div>
+
+</body>
+</html>
