@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roadmap de Melhorias — Sistema Terapia Acolher</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:       #0f2044;
+      --navy-mid:   #1a3260;
+      --blue:       #1e4fd8;
+      --teal:       #0d9488;
+      --teal-light: #14b8a6;
+      --teal-bg:    #f0fdfa;
+      --red:        #dc2626;
+      --red-bg:     #fef2f2;
+      --amber:      #d97706;
+      --amber-bg:   #fffbeb;
+      --slate-50:   #f8fafc;
+      --slate-100:  #f1f5f9;
+      --slate-200:  #e2e8f0;
+      --slate-400:  #94a3b8;
+      --slate-600:  #475569;
+      --slate-700:  #334155;
+      --slate-800:  #1e293b;
+      --white:      #ffffff;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--slate-100);
+      color: var(--slate-800);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HERO HEADER ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #163a6e 100%);
+      padding: 56px 40px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 360px; height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(13,148,136,.25) 0%, transparent 70%);
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -40px;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(30,79,216,.2) 0%, transparent 70%);
+    }
+    .hero-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(13,148,136,.2);
+      border: 1px solid rgba(20,184,166,.35);
+      color: var(--teal-light);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .hero-badge::before { content: '●'; font-size: 8px; }
+    .hero h1 {
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.2;
+      margin-bottom: 12px;
+      letter-spacing: -.02em;
+    }
+    .hero h1 span { color: var(--teal-light); }
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      margin-top: 28px;
+    }
+    .hero-meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .hero-meta-item .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.45);
+    }
+    .hero-meta-item .value {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,.9);
+    }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 16px;
+    }
+    .section-title::before {
+      content: '';
+      display: block;
+      width: 28px; height: 3px;
+      border-radius: 2px;
+      background: var(--teal);
+    }
+
+    .block-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--navy);
+      margin-bottom: 6px;
+      letter-spacing: -.02em;
+    }
+    .block-subtitle {
+      font-size: 14px;
+      color: var(--slate-600);
+      margin-bottom: 28px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      border: 1px solid var(--slate-200);
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 4px rgba(15,32,68,.06), 0 4px 16px rgba(15,32,68,.04);
+    }
+
+    /* ── ACCESS TABLE ── */
+    .access-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .access-table thead tr {
+      background: var(--slate-50);
+      border-bottom: 2px solid var(--slate-200);
+    }
+    .access-table thead th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--slate-600);
+    }
+    .access-table tbody tr {
+      border-bottom: 1px solid var(--slate-100);
+      transition: background .15s;
+    }
+    .access-table tbody tr:hover { background: var(--slate-50); }
+    .access-table tbody td { padding: 12px 14px; color: var(--slate-700); }
+    .access-table tbody td:first-child { font-weight: 600; color: var(--slate-800); }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .badge-critico  { background: var(--red-bg);   color: var(--red);   border: 1px solid #fecaca; }
+    .badge-alto     { background: var(--amber-bg);  color: var(--amber); border: 1px solid #fde68a; }
+    .badge-medio    { background: #eff6ff;           color: var(--blue);  border: 1px solid #bfdbfe; }
+
+    .confidential-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #0f766e;
+      line-height: 1.5;
+    }
+    .confidential-note .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── DIAGNOSTICO ── */
+    .diag-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .diag-card {
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid transparent;
+    }
+    .diag-card.critico {
+      background: var(--red-bg);
+      border-color: #fecaca;
+    }
+    .diag-card.funcional {
+      background: var(--amber-bg);
+      border-color: #fde68a;
+    }
+    .diag-card.legado {
+      background: var(--slate-50);
+      border-color: var(--slate-200);
+    }
+    .diag-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .diag-card.critico   .diag-card-title { color: var(--red); }
+    .diag-card.funcional .diag-card-title { color: var(--amber); }
+    .diag-card.legado    .diag-card-title { color: var(--slate-600); }
+    .diag-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .diag-list li {
+      font-size: 13px;
+      padding-left: 16px;
+      position: relative;
+      color: var(--slate-700);
+      line-height: 1.45;
+    }
+    .diag-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      font-size: 10px;
+      top: 2px;
+    }
+    .diag-card.critico   .diag-list li::before { color: var(--red); }
+    .diag-card.funcional .diag-list li::before { color: var(--amber); }
+    .diag-card.legado    .diag-list li::before { color: var(--slate-400); }
+
+    .stat-highlight {
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .diag-card.critico .stat-highlight { color: var(--red); }
+
+    /* ── PHASES ── */
+    .phase-list { display: flex; flex-direction: column; gap: 16px; }
+
+    .phase {
+      border-radius: 14px;
+      border: 1px solid var(--slate-200);
+      overflow: hidden;
+      background: var(--white);
+      box-shadow: 0 1px 3px rgba(15,32,68,.05);
+    }
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      background: var(--slate-50);
+      border-bottom: 1px solid var(--slate-200);
+      cursor: pointer;
+    }
+    .phase-number {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 800;
+      flex-shrink: 0;
+      color: var(--white);
+    }
+    .phase-0 .phase-number { background: var(--slate-600); }
+    .phase-1 .phase-number { background: var(--red); }
+    .phase-2 .phase-number { background: var(--blue); }
+    .phase-3 .phase-number { background: #7c3aed; }
+    .phase-4 .phase-number { background: var(--teal); }
+    .phase-5 .phase-number { background: #059669; }
+
+    .phase-header-text { flex: 1; }
+    .phase-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .phase-week {
+      font-size: 12px;
+      color: var(--slate-400);
+      margin-top: 2px;
+    }
+    .phase-tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .phase-0 .phase-tag { background: #f1f5f9; color: var(--slate-600); }
+    .phase-1 .phase-tag { background: #fef2f2; color: var(--red); }
+    .phase-2 .phase-tag { background: #eff6ff; color: var(--blue); }
+    .phase-3 .phase-tag { background: #f5f3ff; color: #7c3aed; }
+    .phase-4 .phase-tag { background: var(--teal-bg); color: var(--teal); }
+    .phase-5 .phase-tag { background: #f0fdf4; color: #059669; }
+
+    .phase-body { padding: 20px 24px; }
+    .phase-objective {
+      font-size: 13px;
+      color: var(--slate-600);
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: var(--slate-50);
+      border-left: 3px solid var(--slate-300);
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+    }
+    .phase-tasks { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .phase-tasks li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13.5px;
+      color: var(--slate-700);
+    }
+    .phase-tasks li .check {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      border: 2px solid var(--slate-300);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .phase-deliverable {
+      margin-top: 18px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .phase-0 .phase-deliverable { background: #f8fafc; color: var(--slate-600); border: 1px solid var(--slate-200); }
+    .phase-1 .phase-deliverable { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
+    .phase-2 .phase-deliverable { background: #eff6ff; color: var(--blue); border: 1px solid #bfdbfe; }
+    .phase-3 .phase-deliverable { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
+    .phase-4 .phase-deliverable { background: var(--teal-bg); color: var(--teal); border: 1px solid #99f6e4; }
+    .phase-5 .phase-deliverable { background: #f0fdf4; color: #059669; border: 1px solid #bbf7d0; }
+    .phase-deliverable .icon { font-size: 15px; flex-shrink: 0; }
+
+    /* ── TIMELINE TABLE ── */
+    .timeline-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .timeline-table thead tr { background: var(--navy); }
+    .timeline-table thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.7);
+    }
+    .timeline-table tbody tr { border-bottom: 1px solid var(--slate-100); }
+    .timeline-table tbody tr:last-child { font-weight: 700; background: var(--slate-50); border-top: 2px solid var(--slate-200); }
+    .timeline-table tbody tr:hover:not(:last-child) { background: var(--slate-50); }
+    .timeline-table tbody td { padding: 12px 16px; color: var(--slate-700); }
+    .timeline-table tbody tr:last-child td { color: var(--navy); }
+
+    .week-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--teal-bg);
+      color: var(--teal);
+      border: 1px solid #99f6e4;
+    }
+
+    /* ── FORA DO ESCOPO ── */
+    .scope-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .scope-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--slate-600);
+      padding: 10px 14px;
+      background: var(--slate-50);
+      border-radius: 8px;
+      border: 1px solid var(--slate-200);
+    }
+    .scope-list li .x {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: var(--red-bg);
+      color: var(--red);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      flex-shrink: 0;
+      border: 1px solid #fecaca;
+    }
+
+    /* ── CTA ── */
+    .cta-block {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+      border-radius: 16px;
+      padding: 40px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-block::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(13,148,136,.2) 0%, transparent 70%);
+    }
+    .cta-block h2 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .cta-block p {
+      font-size: 15px;
+      color: rgba(255,255,255,.6);
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: var(--teal);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 13px 32px;
+      border-radius: 10px;
+      text-decoration: none;
+      letter-spacing: .02em;
+      position: relative;
+      z-index: 1;
+      transition: background .15s;
+    }
+    .cta-btn:hover { background: var(--teal-light); }
+
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--slate-400);
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    /* ── SPACING ── */
+    .mt-8  { margin-top: 8px; }
+    .mt-32 { margin-top: 32px; }
+    .mb-8  { margin-bottom: 8px; }
+
+    /* ── TASK STATUS ── */
+    .phase-tasks li .check.done {
+      background: #059669;
+      border-color: #059669;
+      position: relative;
+    }
+    .phase-tasks li .check.done::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 10px;
+      font-weight: 900;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .phase-tasks li.done-task { color: var(--slate-400); }
+    .phase-tasks li.done-task .check.done + * { text-decoration: line-through; text-decoration-color: #cbd5e1; }
+
+    /* ── PHASE STATUS PILL ── */
+    .phase-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-left: auto;
+    }
+    .phase-status.concluido { background: #f0fdf4; color: #059669; border: 1px solid #bbf7d0; }
+    .phase-status.andamento { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .phase-status.pendente  { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
+    .phase-status::before { content: '●'; font-size: 7px; }
+
+    /* ── PROGRESS BLOCK ── */
+    .progress-banner {
+      background: linear-gradient(135deg, #f0fdf4 0%, #f0fdfa 100%);
+      border: 1px solid #bbf7d0;
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 40px;
+    }
+    .progress-banner-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: #059669;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .progress-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .progress-stat {
+      background: white;
+      border: 1px solid #d1fae5;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .progress-stat .ps-number {
+      font-size: 28px;
+      font-weight: 800;
+      color: #059669;
+      line-height: 1;
+    }
+    .progress-stat .ps-label {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .done-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .done-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 13px;
+      color: #374151;
+    }
+    .done-list li .tick {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #059669;
+      color: white;
+      font-size: 9px;
+      font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .done-list li .pending-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 2px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 8px;
+      color: #94a3b8;
+    }
+    .done-list-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin: 14px 0 8px;
+    }
+    .deploy-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .deploy-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: 1px solid;
+      transition: opacity .15s;
+    }
+    .deploy-link:hover { opacity: .8; }
+    .deploy-link.novo  { background: #eff6ff; color: #1e4fd8; border-color: #bfdbfe; }
+    .deploy-link.antigo { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+    .deploy-link.github { background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe; }
+
+    /* ── PRINT ── */
+    @media print {
+      body { background: white; }
+      .card, .phase { box-shadow: none; }
+      .hero { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Em Andamento</div>
+    <h1>Roadmap de Melhorias<br><span>Sistema Terapia Acolher</span></h1>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <span class="label">Versão</span>
+        <span class="value">3.0</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Atualizado em</span>
+        <span class="value">13 de Março de 2026</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Elaborado por</span>
+        <span class="value">Matheus Pinheiro</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Status</span>
+        <span class="value" style="color:#4ade80">● Backend novo entregue</span>
+      </div>
+      <div class="hero-meta-item">
+        <span class="label">Duração estimada</span>
+        <span class="value">~7 semanas</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════ CONTAINER ═══════════ -->
+<div class="container">
+
+  <!-- ── PROGRESSO ATUAL ── -->
+  <div class="progress-banner">
+    <div class="progress-banner-title">✦ Progresso atual — 13 de Março de 2026</div>
+
+    <div class="progress-grid">
+      <div class="progress-stat">
+        <div class="ps-number">6</div>
+        <div class="ps-label">Prioridades implementadas</div>
+      </div>
+      <div class="progress-stat">
+        <div class="ps-number">9</div>
+        <div class="ps-label">Páginas frontend (UI)</div>
+      </div>
+      <div class="progress-stat">
+        <div class="ps-number">12</div>
+        <div class="ps-label">Endpoints de API</div>
+      </div>
+      <div class="progress-stat">
+        <div class="ps-number">8</div>
+        <div class="ps-label">Tabelas banco de dados</div>
+      </div>
+    </div>
+
+    <div class="done-list-title">✅ Concluído</div>
+    <ul class="done-list">
+      <li><span class="tick">✓</span> Frontend novo construído — React + Tailwind CSS + TypeScript</li>
+      <li><span class="tick">✓</span> Portal Admin (UI): Dashboard, Pacientes, Terapeutas, Atribuições, Matching</li>
+      <li><span class="tick">✓</span> Portal Terapeuta (UI): Meu Perfil, Minhas Atribuições, Meu Saldo</li>
+      <li><span class="tick">✓</span> <strong>Backend novo criado do zero</strong> — Node.js + Express + MySQL + Drizzle ORM</li>
+      <li><span class="tick">✓</span> <strong>P1 — Fluxo Kiwify → cadastro → fila</strong>: webhook recebe compra, saldo creditado automaticamente no cadastro</li>
+      <li><span class="tick">✓</span> <strong>P2 — Matching com filtros eliminatórios</strong>: gênero e turno do paciente são critérios obrigatórios; fila por tempo sem receber lead</li>
+      <li><span class="tick">✓</span> <strong>P3 — Reposição de leads</strong>: terapeuta solicita até 3 reposições por ciclo via portal</li>
+      <li><span class="tick">✓</span> <strong>P4 — Lista webhooks recebidos do ManyChat</strong>: todos os dados de pacientes registrados</li>
+      <li><span class="tick">✓</span> <strong>P5 — Lista webhooks enviados ao ManyChat</strong>: notificações para paciente e terapeuta registradas</li>
+      <li><span class="tick">✓</span> <strong>P6 — Lista webhooks recebidos da Kiwify</strong>: todas as compras registradas com status de vinculação</li>
+      <li><span class="tick">✓</span> Acesso ao ManyChat recebido do Rodrigo (call 13/03)</li>
+      <li><span class="tick">✓</span> API client no frontend conectando UI ao backend</li>
+      <li><span class="tick">✓</span> Sistema antigo acessível para referência (old-terapia-acolher.vercel.app)</li>
+      <li><span class="tick">✓</span> Repositório GitHub com código novo + código-fonte do Manus</li>
+    </ul>
+
+    <div class="done-list-title">⏳ Aguardando acessos para testar</div>
+    <ul class="done-list">
+      <li><span class="pending-dot">○</span> Banco de dados MySQL — necessário para rodar <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:11px">npm run db:push</code> e testar</li>
+      <li><span class="pending-dot">○</span> API Key ManyChat — para ativar envio de notificações</li>
+      <li><span class="pending-dot">○</span> Acesso ao painel Kiwify — para configurar URL do webhook</li>
+      <li><span class="pending-dot">○</span> VPS Hostinger — para deploy do novo sistema</li>
+    </ul>
+
+    <div class="deploy-links">
+      <a class="deploy-link novo" href="https://cerebro-terapia-acolher.vercel.app" target="_blank">🚀 Frontend Novo (preview)</a>
+      <a class="deploy-link antigo" href="https://old-terapia-acolher.vercel.app" target="_blank">🔍 Sistema Antigo (referência)</a>
+      <a class="deploy-link github" href="https://github.com/vertixmkt/C-rebro-Terapia-Acolher" target="_blank">💾 Repositório GitHub</a>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO PRIORIDADES ── -->
+  <div class="section-title mt-32">Prioridades</div>
+  <div class="block-title">As 6 Prioridades do Sistema</div>
+  <p class="block-subtitle">Definidas na call de 13/03/2026. Todas implementadas no código do backend novo.</p>
+
+  <div class="phase-list" style="margin-bottom:32px">
+
+    <div class="phase phase-0">
+      <div class="phase-header">
+        <div class="phase-number" style="background:#059669">1</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Fluxo de entrada do terapeuta via Kiwify</div>
+          <div class="phase-week">Compra → cadastro → fila automática com saldo correto</div>
+        </div>
+        <span class="phase-status concluido">Implementado</span>
+      </div>
+      <div class="phase-body">
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Webhook da Kiwify registra compra e detecta quantidade de leads pelo nome da oferta</span></li>
+          <li class="done-task"><span class="check done"></span><span>Terapeuta preenche formulário público de cadastro</span></li>
+          <li class="done-task"><span class="check done"></span><span>Ao cadastrar, sistema vincula automaticamente webhooks Kiwify pendentes e credita saldo correto</span></li>
+          <li class="done-task"><span class="check done"></span><span>Rodrigo aprova → terapeuta entra na fila ativa com saldo real (não mais fixo em 10)</span></li>
+          <li><span class="check"></span><em style="font-size:12px;color:#d97706">Aguardando: configurar URL do webhook no painel Kiwify</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase phase-2">
+      <div class="phase-header">
+        <div class="phase-number" style="background:#059669">2</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Matching automático com filtros eliminatórios</div>
+          <div class="phase-week">Exigências do paciente vêm primeiro, independente da posição na fila</div>
+        </div>
+        <span class="phase-status concluido">Implementado</span>
+      </div>
+      <div class="phase-body">
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Filtros eliminatórios: gênero do terapeuta (se paciente pede M ou F), turno, saldo &gt; 0, status ativo</span></li>
+          <li class="done-task"><span class="check done"></span><span>Dentro dos elegíveis: ordenação por quem está há mais tempo sem lead (fila justa)</span></li>
+          <li class="done-task"><span class="check done"></span><span>Score de compatibilidade: especialidades + abordagem vs. queixa do paciente</span></li>
+          <li class="done-task"><span class="check done"></span><span>Modos: Automático / Semi-auto / Manual / Pausado</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase phase-3">
+      <div class="phase-header">
+        <div class="phase-number" style="background:#059669">3</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Reposição de leads (lead fantasma)</div>
+          <div class="phase-week">Terapeuta solicita até 3 reposições por ciclo</div>
+        </div>
+        <span class="phase-status concluido">Implementado</span>
+      </div>
+      <div class="phase-body">
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Terapeuta abre solicitação informando protocolo de contato (0h, 24h, 72h, 15 dias)</span></li>
+          <li class="done-task"><span class="check done"></span><span>Sistema verifica limite máximo de 3 reposições por ciclo</span></li>
+          <li class="done-task"><span class="check done"></span><span>Admin aprova → 1 lead é creditado automaticamente</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase phase-4">
+      <div class="phase-header">
+        <div class="phase-number" style="background:#059669">4</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Lista de webhooks recebidos do ManyChat</div>
+          <div class="phase-week">Todos os dados que chegam do ManyChat ficam registrados</div>
+        </div>
+        <span class="phase-status concluido">Implementado</span>
+      </div>
+      <div class="phase-body">
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Nome, telefone, gênero, turno, motivo, subscriber ID de cada paciente recebido</span></li>
+          <li class="done-task"><span class="check done"></span><span>Status de processamento (processado / erro) com payload completo</span></li>
+          <li class="done-task"><span class="check done"></span><span>Endpoint: GET /api/webhooks/manychat/received</span></li>
+          <li><span class="check"></span><em style="font-size:12px;color:#d97706">Pendente: página no frontend para visualizar esta lista</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase phase-4">
+      <div class="phase-header">
+        <div class="phase-number" style="background:#059669">5</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Lista de webhooks enviados ao ManyChat</div>
+          <div class="phase-week">Notificações para paciente e terapeuta todas rastreadas</div>
+        </div>
+        <span class="phase-status concluido">Implementado</span>
+      </div>
+      <div class="phase-body">
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Notificação ao paciente (dados do terapeuta atribuído) e ao terapeuta (dados do novo paciente)</span></li>
+          <li class="done-task"><span class="check done"></span><span>Status de cada envio (success / error / skipped) com payload e resposta do ManyChat</span></li>
+          <li class="done-task"><span class="check done"></span><span>Endpoint: GET /api/webhooks/manychat/sent</span></li>
+          <li><span class="check"></span><em style="font-size:12px;color:#d97706">Pendente: botão de re-envio em caso de erro + página no frontend</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase phase-5">
+      <div class="phase-header">
+        <div class="phase-number" style="background:#059669">6</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Lista de webhooks recebidos da Kiwify</div>
+          <div class="phase-week">Todas as compras rastreadas com status de vinculação</div>
+        </div>
+        <span class="phase-status concluido">Implementado</span>
+      </div>
+      <div class="phase-body">
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Nome, e-mail, produto, oferta, leads e valor de cada compra</span></li>
+          <li class="done-task"><span class="check done"></span><span>Status: pendente (terapeuta ainda não cadastrou) / processado / erro</span></li>
+          <li class="done-task"><span class="check done"></span><span>Terapeuta vinculado quando identificado pelo e-mail ou telefone</span></li>
+          <li class="done-task"><span class="check done"></span><span>Endpoint: GET /api/webhooks/kiwify</span></li>
+          <li><span class="check"></span><em style="font-size:12px;color:#d97706">Pendente: página no frontend + botão para processar pendentes manualmente</em></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── SEÇÃO 1: ACESSOS ── -->
+  <div class="section-title">Pré-requisitos</div>
+  <div class="block-title">O que precisamos de você antes de começar</div>
+  <p class="block-subtitle">Para iniciar o trabalho, os itens abaixo são indispensáveis. Sem eles não é possível avançar.</p>
+
+  <div class="card">
+    <table class="access-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Descrição</th>
+          <th>Prioridade</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Acesso ao repositório</td>
+          <td>Link do GitHub/GitLab com permissão de colaborador</td>
+          <td><span class="badge badge-critico">CRÍTICO</span></td>
+        </tr>
+        <tr>
+          <td>Ambiente de produção</td>
+          <td>URL + credenciais de admin do sistema atual</td>
+          <td><span class="badge badge-critico">CRÍTICO</span></td>
+        </tr>
+        <tr>
+          <td>Banco de dados</td>
+          <td>Credenciais MySQL/TiDB (ou dump para ambiente de dev)</td>
+          <td><span class="badge badge-critico">CRÍTICO</span></td>
+        </tr>
+        <tr>
+          <td>ManyChat</td>
+          <td>API Key + acesso à conta para mapear flows e custom fields</td>
+          <td><span class="badge" style="background:#f0fdf4;color:#059669;border:1px solid #bbf7d0">✓ RECEBIDO</span></td>
+        </tr>
+        <tr>
+          <td>Kiwify</td>
+          <td>API Key + acesso para mapear produtos, ofertas e webhooks</td>
+          <td><span class="badge badge-alto">ALTO</span></td>
+        </tr>
+        <tr>
+          <td>Variáveis de ambiente</td>
+          <td>Arquivo <code style="background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px">.env</code> de produção ou listagem das variáveis</td>
+          <td><span class="badge badge-critico">CRÍTICO</span></td>
+        </tr>
+        <tr>
+          <td>Hospedagem</td>
+          <td>Acesso ao painel onde o sistema está deployado (Manus Hosting)</td>
+          <td><span class="badge badge-alto">ALTO</span></td>
+        </tr>
+        <tr>
+          <td>Google Cloud / AI Studio</td>
+          <td>Acesso para verificar integração de IA usada no matching</td>
+          <td><span class="badge badge-medio">MÉDIO</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="confidential-note">
+      <span class="icon">🔒</span>
+      <span>Todos os acessos serão tratados com total confidencialidade. Recomendamos criar credenciais específicas para desenvolvimento, sem comprometer as credenciais principais de produção.</span>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 2: DIAGNÓSTICO ── -->
+  <div class="section-title mt-32">Diagnóstico</div>
+  <div class="block-title">Estado atual do sistema</div>
+  <p class="block-subtitle">Com base no relatório fornecido, identificamos os seguintes problemas.</p>
+
+  <div class="diag-grid">
+    <div class="diag-card critico">
+      <div class="diag-card-title">Problemas Críticos</div>
+      <ul class="diag-list">
+        <li><span class="stat-highlight">742 pacientes</span> sem terapeuta atribuído — fila parada</li>
+        <li><span class="stat-highlight">4.798 atribuições</span> com terapeuta inativo — dado sujo em produção</li>
+        <li>Links públicos de cadastro não funcionam — bloqueando entrada de novos terapeutas</li>
+      </ul>
+    </div>
+    <div class="diag-card funcional">
+      <div class="diag-card-title">Problemas Funcionais</div>
+      <ul class="diag-list">
+        <li>Dashboard não apresenta informações úteis</li>
+        <li>Subscriber ID do terapeuta no ManyChat não é capturado automaticamente</li>
+        <li>Não existe área de acesso para o terapeuta acompanhar seu perfil</li>
+        <li>Validação de compra Kiwify antes de liberar cadastro não implementada</li>
+      </ul>
+    </div>
+    <div class="diag-card legado">
+      <div class="diag-card-title">Código Legado (será removido)</div>
+      <ul class="diag-list">
+        <li>Integração Z-API (abandonada, derrubava chips)</li>
+        <li>Telas: Monitoramento Fila, Análise Mensalidades</li>
+        <li>Telas: Métricas Terapeuta, Comparação Envios</li>
+        <li>Telas: Auditoria, Feedback, Debug Logs, Histórico Z-API</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 3: FASES ── -->
+  <div class="section-title mt-32">Execução</div>
+  <div class="block-title">Roadmap em 6 Fases</div>
+  <p class="block-subtitle">Cada fase tem objetivo claro, lista de entregas e um entregável concreto ao final.</p>
+
+  <div class="phase-list">
+
+    <!-- FASE 0 -->
+    <div class="phase phase-0">
+      <div class="phase-header">
+        <div class="phase-number">0</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Onboarding e Setup</div>
+          <div class="phase-week">Semana 1</div>
+        </div>
+        <span class="phase-tag">Diagnóstico</span>
+        <span class="phase-status andamento">Em andamento</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-objective">Entender o código de verdade e configurar ambiente de desenvolvimento local.</div>
+        <ul class="phase-tasks">
+          <li><span class="check"></span>Receber e validar todos os acessos listados <em style="font-size:12px;color:#d97706">(aguardando)</em></li>
+          <li class="done-task"><span class="check done"></span><span>Mapear estrutura real do repositório — código-fonte Manus analisado</span></li>
+          <li class="done-task"><span class="check done"></span><span>Subir ambiente local de desenvolvimento — build isolado criado</span></li>
+          <li><span class="check"></span>Revisar banco de dados — tabelas, índices, dados reais <em style="font-size:12px;color:#d97706">(aguardando acesso)</em></li>
+          <li><span class="check"></span>Mapear todos os flows do ManyChat e custom fields em uso <em style="font-size:12px;color:#d97706">(aguardando API key)</em></li>
+          <li><span class="check"></span>Mapear webhooks ativos da Kiwify <em style="font-size:12px;color:#d97706">(aguardando acesso)</em></li>
+          <li class="done-task"><span class="check done"></span><span>Auditoria de telas ativas x telas mortas — 30+ telas identificadas, 12 para remover</span></li>
+          <li class="done-task"><span class="check done"></span><span>Documentar algoritmo de matching — arquivo matching-23-02-v3.ts mapeado</span></li>
+        </ul>
+        <div class="phase-deliverable">
+          <span class="icon">📄</span>
+          Entregável: Relatório de diagnóstico técnico com prioridades validadas e aprovadas pelo cliente
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 1 -->
+    <div class="phase phase-1">
+      <div class="phase-header">
+        <div class="phase-number">1</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Limpeza e Estabilização</div>
+          <div class="phase-week">Semana 2</div>
+        </div>
+        <span class="phase-tag">Limpeza</span>
+        <span class="phase-status pendente">Pendente</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-objective">Sistema mais leve, sem código morto, sem bugs críticos em produção.</div>
+        <ul class="phase-tasks">
+          <li><span class="check"></span>Remover telas e código morto (Z-API e telas não utilizadas)</li>
+          <li><span class="check"></span>Remover routers e procedures de Z-API do backend</li>
+          <li><span class="check"></span>Investigar causa raiz dos 742 pacientes sem terapeuta</li>
+          <li><span class="check"></span>Corrigir lógica de matching para evitar fila parada</li>
+          <li><span class="check"></span>Tratar as 4.798 atribuições com terapeuta inativo (reprocessar ou arquivar — definir com cliente)</li>
+          <li><span class="check"></span>Criar script de auditoria automática para detectar casos futuros</li>
+        </ul>
+        <div class="phase-deliverable">
+          <span class="icon">✅</span>
+          Entregável: Sistema sem código morto, banco limpo e deploy em produção com rollback documentado
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase phase-2">
+      <div class="phase-header">
+        <div class="phase-number">2</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Correções Funcionais</div>
+          <div class="phase-week">Semanas 3 e 4</div>
+        </div>
+        <span class="phase-tag">Funcionalidades</span>
+        <span class="phase-status andamento">UI Concluída · Backend pendente</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-objective">Tudo que existe no sistema funciona de verdade.</div>
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Dashboard redesenhado com métricas úteis e ações rápidas</span></li>
+          <li><span class="check"></span>Links públicos de cadastro de paciente e terapeuta funcionando <em style="font-size:12px;color:#d97706">(aguarda backend)</em></li>
+          <li><span class="check"></span>Validação de compra Kiwify antes de liberar cadastro de terapeuta <em style="font-size:12px;color:#d97706">(aguarda Kiwify API)</em></li>
+          <li><span class="check"></span>Captura automática do Subscriber ID do terapeuta via ManyChat <em style="font-size:12px;color:#d97706">(aguarda ManyChat API)</em></li>
+          <li><span class="check"></span>Interface para cadastrar produtos Kiwify com quantidade de leads <em style="font-size:12px;color:#d97706">(aguarda backend)</em></li>
+          <li><span class="check"></span>Saldos de leads atualizando automaticamente via webhook <em style="font-size:12px;color:#d97706">(aguarda Kiwify)</em></li>
+        </ul>
+        <div class="phase-deliverable">
+          <span class="icon">🚀</span>
+          Entregável: Dashboard funcional, links operando, saldos automáticos, cadastro validado
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase phase-3">
+      <div class="phase-header">
+        <div class="phase-number">3</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Portal do Terapeuta</div>
+          <div class="phase-week">Semana 5</div>
+        </div>
+        <span class="phase-tag">Nova Funcionalidade</span>
+        <span class="phase-status andamento">UI Concluída · Backend pendente</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-objective">O terapeuta tem autonomia para gerenciar seus próprios dados sem precisar do admin.</div>
+        <ul class="phase-tasks">
+          <li><span class="check"></span>Login via link único enviado pelo ManyChat (token temporário) <em style="font-size:12px;color:#d97706">(aguarda backend)</em></li>
+          <li class="done-task"><span class="check done"></span><span>Tela "Meu Perfil" — editar dados, turnos, abordagem, público atendido</span></li>
+          <li class="done-task"><span class="check done"></span><span>Tela "Minhas Atribuições" — lista de pacientes recebidos e histórico</span></li>
+          <li class="done-task"><span class="check done"></span><span>Tela "Meu Saldo" — histórico de compras, saldo atual, link para comprar mais</span></li>
+          <li><span class="check"></span>Restrição total — terapeuta só acessa seus próprios dados <em style="font-size:12px;color:#d97706">(aguarda autenticação real)</em></li>
+        </ul>
+        <div class="phase-deliverable">
+          <span class="icon">👤</span>
+          Entregável: Portal do terapeuta funcional, seguro e com autenticação separada da área admin
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div class="phase phase-4">
+      <div class="phase-header">
+        <div class="phase-number">4</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Algoritmo de Matching</div>
+          <div class="phase-week">Semana 6</div>
+        </div>
+        <span class="phase-tag">Inteligência</span>
+        <span class="phase-status andamento">UI Concluída · Backend pendente</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-objective">Matching mais preciso, com controle fácil pelo admin — sem precisar de desenvolvedor para ajustar.</div>
+        <ul class="phase-tasks">
+          <li class="done-task"><span class="check done"></span><span>Auditoria do algoritmo real — arquivo matching-23-02-v3.ts lido e mapeado</span></li>
+          <li><span class="check"></span>Correção dos casos onde pacientes ficam presos sem atribuição <em style="font-size:12px;color:#d97706">(aguarda acesso ao banco)</em></li>
+          <li class="done-task"><span class="check done"></span><span>Painel de controle — ajustar pesos dos critérios (gênero, turno, abordagem, IA)</span></li>
+          <li class="done-task"><span class="check done"></span><span>Log visual de cada decisão do algoritmo — por que X foi atribuído a Y</span></li>
+          <li class="done-task"><span class="check done"></span><span>Matching semi-automático: admin seleciona paciente → IA sugere terapeuta com score + motivo</span></li>
+          <li class="done-task"><span class="check done"></span><span>Matching manual com seleção de terapeuta diretamente na ficha do paciente</span></li>
+        </ul>
+        <div class="phase-deliverable">
+          <span class="icon">🧠</span>
+          Entregável: Algoritmo revisado, zero pacientes presos, admin controla critérios sem precisar de dev
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 5 -->
+    <div class="phase phase-5">
+      <div class="phase-header">
+        <div class="phase-number">5</div>
+        <div class="phase-header-text">
+          <div class="phase-name">Polimento Final</div>
+          <div class="phase-week">Semana 7</div>
+        </div>
+        <span class="phase-tag">Entrega</span>
+        <span class="phase-status pendente">Pendente</span>
+      </div>
+      <div class="phase-body">
+        <div class="phase-objective">Sistema pronto para operar de forma autônoma, sem suporte técnico constante.</div>
+        <ul class="phase-tasks">
+          <li><span class="check"></span>Revisão de UX das telas de Pacientes, Terapeutas e Atribuições</li>
+          <li><span class="check"></span>Exportação de atribuições para Excel com filtros por período e status</li>
+          <li><span class="check"></span>Logs ManyChat com re-envio fácil em caso de erro</li>
+          <li><span class="check"></span>Testes de carga com 10k+ pacientes e múltiplos usuários simultâneos</li>
+          <li><span class="check"></span>Documentação de operação para o time administrativo</li>
+        </ul>
+        <div class="phase-deliverable">
+          <span class="icon">🎯</span>
+          Entregável: Sistema estável, documentado e time treinado para operar sem suporte técnico
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /phase-list -->
+
+  <!-- ── SEÇÃO 4: CRONOGRAMA ── -->
+  <div class="section-title mt-32">Cronograma</div>
+  <div class="block-title">Resumo das semanas</div>
+  <p class="block-subtitle mb-8">Estimativa total de aproximadamente 7 semanas de trabalho.</p>
+
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <table class="timeline-table">
+      <thead>
+        <tr>
+          <th>Fase</th>
+          <th>O que é feito</th>
+          <th>Duração</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Fase 0</strong></td>
+          <td>Onboarding e diagnóstico real</td>
+          <td><span class="week-pill">1 semana</span></td>
+          <td><span class="phase-status andamento" style="margin-left:0">Em andamento</span></td>
+        </tr>
+        <tr>
+          <td><strong>Fase 1</strong></td>
+          <td>Limpeza de código e correção de dados em produção</td>
+          <td><span class="week-pill">1 semana</span></td>
+          <td><span class="phase-status pendente" style="margin-left:0">Pendente</span></td>
+        </tr>
+        <tr>
+          <td><strong>Fase 2</strong></td>
+          <td>Correções funcionais (dashboard, links, saldos)</td>
+          <td><span class="week-pill">2 semanas</span></td>
+          <td><span class="phase-status andamento" style="margin-left:0">UI pronta</span></td>
+        </tr>
+        <tr>
+          <td><strong>Fase 3</strong></td>
+          <td>Portal do terapeuta (self-service)</td>
+          <td><span class="week-pill">1 semana</span></td>
+          <td><span class="phase-status andamento" style="margin-left:0">UI pronta</span></td>
+        </tr>
+        <tr>
+          <td><strong>Fase 4</strong></td>
+          <td>Algoritmo de matching revisado</td>
+          <td><span class="week-pill">1 semana</span></td>
+          <td><span class="phase-status andamento" style="margin-left:0">UI pronta</span></td>
+        </tr>
+        <tr>
+          <td><strong>Fase 5</strong></td>
+          <td>Polimento, testes de carga e documentação</td>
+          <td><span class="week-pill">1 semana</span></td>
+          <td><span class="phase-status pendente" style="margin-left:0">Pendente</span></td>
+        </tr>
+        <tr>
+          <td>Total</td>
+          <td>Projeto completo, sistema em produção estável</td>
+          <td><span class="week-pill" style="background:#0f2044;color:white;border-color:#0f2044">~7 semanas</span></td>
+          <td><span class="phase-status andamento" style="margin-left:0">● Adiantado</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── SEÇÃO 5: FORA DO ESCOPO ── -->
+  <div class="section-title mt-32">Escopo</div>
+  <div class="block-title">O que NÃO está incluído</div>
+  <p class="block-subtitle">Para manter o foco e a clareza do projeto, os itens abaixo estão fora do escopo desta contratação.</p>
+
+  <div class="card">
+    <ul class="scope-list">
+      <li><span class="x">✕</span> Migração para outro banco de dados</li>
+      <li><span class="x">✕</span> Desenvolvimento de aplicativo mobile</li>
+      <li><span class="x">✕</span> Redesign visual completo do sistema</li>
+      <li><span class="x">✕</span> Integração com canais além de ManyChat e Kiwify</li>
+      <li><span class="x">✕</span> Funcionalidades de videochamada ou chat interno entre terapeuta e paciente</li>
+    </ul>
+  </div>
+
+  <!-- ── CTA ── -->
+  <div class="cta-block mt-32">
+    <h2>Frontend entregue — próximo passo: os acessos</h2>
+    <p>O novo sistema já está disponível para visualização. Para conectá-lo ao banco de dados real e ativar as integrações ManyChat e Kiwify, precisamos dos acessos listados na seção de pré-requisitos.<br><br>
+    Com os acessos em mãos, retomamos imediatamente a Fase 0 (restante) e avançamos para as Fases 1 e 2.</p>
+    <a class="cta-btn" href="https://cerebro-terapia-acolher.vercel.app" target="_blank">Ver sistema novo em funcionamento →</a>
+  </div>
+
+  <p class="footer-note">
+    Roadmap v2.0 — atualizado em 12 de Março de 2026 · Matheus Pinheiro · Terapia Acolher
+  </p>
+
+</div><!-- /container -->
+</body>
+</html>

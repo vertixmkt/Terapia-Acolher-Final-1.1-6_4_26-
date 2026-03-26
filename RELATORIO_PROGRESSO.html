@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatório de Progresso — Sistema Terapia Acolher</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:      #0f2044;
+      --navy-mid:  #1a3260;
+      --blue:      #1e4fd8;
+      --teal:      #0d9488;
+      --teal-l:    #14b8a6;
+      --teal-bg:   #f0fdfa;
+      --green:     #059669;
+      --green-bg:  #f0fdf4;
+      --amber:     #d97706;
+      --amber-bg:  #fffbeb;
+      --red:       #dc2626;
+      --red-bg:    #fef2f2;
+      --slate-50:  #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --white:     #ffffff;
+    }
+
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--slate-100);
+      color: var(--slate-800);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      font-size: 14px;
+    }
+
+    @media print {
+      body { background: white; font-size: 11px; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+      .hero { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #163a6e 100%);
+      padding: 44px 40px 36px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -80px; right: -60px;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(13,148,136,.25) 0%, transparent 70%);
+    }
+    .hero-inner { max-width: 860px; margin: 0 auto; position: relative; z-index: 1; }
+    .hero-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(13,148,136,.2); border: 1px solid rgba(20,184,166,.35);
+      color: var(--teal-l); font-size: 11px; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 20px; margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(22px, 3.5vw, 32px); font-weight: 800;
+      color: white; line-height: 1.2; margin-bottom: 8px; letter-spacing: -.02em;
+    }
+    .hero h1 span { color: var(--teal-l); }
+    .hero-sub { font-size: 14px; color: rgba(255,255,255,.55); margin-bottom: 24px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 28px; }
+    .hm-item { display: flex; flex-direction: column; gap: 2px; }
+    .hm-item .lbl { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+    .hm-item .val { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.9); }
+
+    /* ── PRINT BTN ── */
+    .print-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--teal); color: white; border: none;
+      font-size: 13px; font-weight: 700; padding: 10px 22px;
+      border-radius: 8px; cursor: pointer; margin: 20px 0;
+      transition: background .15s;
+    }
+    .print-btn:hover { background: var(--teal-l); }
+
+    /* ── CARDS ── */
+    .card {
+      background: white; border-radius: 14px;
+      border: 1px solid var(--slate-200); padding: 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(15,32,68,.06), 0 4px 14px rgba(15,32,68,.04);
+    }
+
+    /* ── SECTION HEADER ── */
+    .sec-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 10px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--teal);
+      margin-bottom: 12px; margin-top: 32px;
+    }
+    .sec-label::before {
+      content: ''; display: block; width: 24px; height: 3px;
+      border-radius: 2px; background: var(--teal);
+    }
+    .sec-title { font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 4px; letter-spacing: -.02em; }
+    .sec-sub { font-size: 13px; color: var(--slate-500); margin-bottom: 20px; }
+
+    /* ── STATS GRID ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat-box {
+      background: white; border: 1px solid var(--slate-200);
+      border-radius: 12px; padding: 16px 14px; text-align: center;
+      box-shadow: 0 1px 3px rgba(15,32,68,.05);
+    }
+    .stat-box .n { font-size: 30px; font-weight: 800; color: var(--teal); line-height: 1; }
+    .stat-box .l { font-size: 11px; color: var(--slate-500); margin-top: 4px; font-weight: 500; }
+
+    /* ── DONE LIST ── */
+    .done-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .done-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: var(--slate-700); line-height: 1.5; }
+    .tick {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--green); color: white;
+      font-size: 9px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .pending-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--slate-100); border: 2px solid var(--slate-300);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px; font-size: 8px; color: var(--slate-400);
+    }
+
+    /* ── TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    thead tr { background: var(--navy); }
+    thead th {
+      padding: 9px 12px; text-align: left;
+      font-size: 10px; font-weight: 700; letter-spacing: .07em;
+      text-transform: uppercase; color: rgba(255,255,255,.75);
+    }
+    tbody tr { border-bottom: 1px solid var(--slate-100); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--slate-50); }
+    tbody td { padding: 9px 12px; color: var(--slate-700); vertical-align: top; }
+    tbody td:first-child { font-weight: 600; color: var(--slate-800); }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 20px; font-size: 10px; font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .badge-done  { background: var(--green-bg);  color: var(--green);  border: 1px solid #bbf7d0; }
+    .badge-pend  { background: var(--amber-bg);  color: var(--amber);  border: 1px solid #fde68a; }
+    .badge-crit  { background: var(--red-bg);    color: var(--red);    border: 1px solid #fecaca; }
+    .badge-info  { background: #eff6ff;           color: var(--blue);   border: 1px solid #bfdbfe; }
+
+    /* ── CODE BLOCK ── */
+    .code-block {
+      background: var(--slate-800); color: #e2e8f0;
+      border-radius: 10px; padding: 16px 18px;
+      font-family: 'Cascadia Code', 'Fira Code', 'SF Mono', Monaco, monospace;
+      font-size: 11.5px; line-height: 1.7;
+      overflow-x: auto; margin: 12px 0;
+    }
+    .code-block .cm { color: #94a3b8; }
+    .code-block .kw { color: #7dd3fc; }
+    .code-block .st { color: #86efac; }
+    .code-block .fn { color: #fbbf24; }
+    .code-block .pu { color: #e2e8f0; }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex; flex-wrap: wrap; gap: 0;
+      align-items: center; margin: 16px 0;
+    }
+    .flow-step {
+      background: var(--teal-bg); border: 1px solid #99f6e4;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; font-weight: 600; color: var(--teal);
+      white-space: nowrap;
+    }
+    .flow-arrow {
+      font-size: 18px; color: var(--slate-400);
+      margin: 0 6px; font-weight: 300;
+    }
+    .flow-step.red { background: var(--red-bg); border-color: #fecaca; color: var(--red); }
+    .flow-step.blue { background: #eff6ff; border-color: #bfdbfe; color: var(--blue); }
+    .flow-step.navy { background: #f0f4ff; border-color: #c7d2fe; color: #4f46e5; }
+
+    /* ── INFO BOX ── */
+    .info-box {
+      display: flex; gap: 12px; padding: 14px 16px;
+      border-radius: 10px; margin: 14px 0; font-size: 13px;
+    }
+    .info-box.green { background: var(--green-bg); border: 1px solid #bbf7d0; color: #065f46; }
+    .info-box.amber { background: var(--amber-bg); border: 1px solid #fde68a; color: #92400e; }
+    .info-box.blue  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .info-box .icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── TWO COLUMNS ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── MINI LIST ── */
+    .mini-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+    .mini-list li { font-size: 12.5px; color: var(--slate-600); padding-left: 14px; position: relative; }
+    .mini-list li::before { content: '▸'; position: absolute; left: 0; font-size: 9px; top: 2px; color: var(--teal); }
+
+    /* ── DIVIDER ── */
+    hr { border: none; border-top: 1px solid var(--slate-200); margin: 28px 0; }
+
+    /* ── FOOTER ── */
+    .footer {
+      text-align: center; font-size: 11px;
+      color: var(--slate-400); margin-top: 48px;
+      padding-top: 20px; border-top: 1px solid var(--slate-200);
+    }
+
+    /* ── PHASE ROW ── */
+    .phase-row {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 16px 0; border-bottom: 1px solid var(--slate-100);
+    }
+    .phase-row:last-child { border-bottom: none; }
+    .phase-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--green); color: white;
+      font-size: 13px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .phase-num.pend { background: var(--slate-400); }
+    .phase-content { flex: 1; }
+    .phase-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+    .phase-desc { font-size: 12.5px; color: var(--slate-600); }
+    .phase-status { flex-shrink: 0; margin-top: 4px; }
+
+    /* ── FILE TREE ── */
+    .file-tree {
+      background: var(--slate-800); color: #cbd5e1;
+      border-radius: 10px; padding: 16px 18px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11.5px; line-height: 1.8;
+    }
+    .file-tree .dir  { color: #7dd3fc; font-weight: 600; }
+    .file-tree .file { color: #86efac; }
+    .file-tree .note { color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-label">● Relatório de Progresso</div>
+    <h1>Sistema <span>Terapia Acolher</span></h1>
+    <p class="hero-sub">Desenvolvimento do novo sistema de matching terapeuta × paciente</p>
+    <div class="hero-meta">
+      <div class="hm-item"><span class="lbl">Data</span><span class="val">18 de Março de 2026</span></div>
+      <div class="hm-item"><span class="lbl">Elaborado por</span><span class="val">Matheus Pinheiro</span></div>
+      <div class="hm-item"><span class="lbl">Período</span><span class="val">11 a 18 de Março de 2026</span></div>
+      <div class="hm-item"><span class="lbl">Status</span><span class="val" style="color:#4ade80">● Sistema deployed e operacional</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- PRINT BUTTON -->
+<div class="container">
+<div class="no-print" style="margin-bottom:8px">
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button>
+</div>
+
+<!-- ══ 1. RESUMO EXECUTIVO ══ -->
+<div class="sec-label">Visão Geral</div>
+<div class="sec-title">Resumo Executivo</div>
+<p class="sec-sub">Sistema completo deployed e operacional na VPS Hostinger</p>
+
+<div class="stats-grid">
+  <div class="stat-box"><div class="n">6</div><div class="l">Prioridades implementadas</div></div>
+  <div class="stat-box"><div class="n">8</div><div class="l">Páginas conectadas à API</div></div>
+  <div class="stat-box"><div class="n">18</div><div class="l">Endpoints de API</div></div>
+  <div class="stat-box"><div class="n">11</div><div class="l">Tabelas banco de dados</div></div>
+  <div class="stat-box"><div class="n">1</div><div class="l">VPS deployed (Hostinger SP)</div></div>
+  <div class="stat-box"><div class="n">100%</div><div class="l">Frontend conectado à API</div></div>
+</div>
+
+<div class="info-box green">
+  <span class="icon">✅</span>
+  <span><strong>Sistema completo deployed na VPS Hostinger (São Paulo).</strong> Backend (Node.js + MySQL) e frontend (React SPA) estão rodando em <strong>http://76.13.70.229</strong>. Todas as 8 páginas do frontend foram reescritas para consumir a API real — zero dados mock. Faltam: domínio + SSL, configurar webhooks Kiwify e API Key do ManyChat, e testar com dados reais.</span>
+</div>
+
+<!-- ══ 2. LINHA DO TEMPO ══ -->
+<div class="sec-label">Cronologia</div>
+<div class="sec-title">O que foi feito e quando</div>
+<p class="sec-sub">Atividades realizadas entre 11 e 18 de Março de 2026</p>
+
+<div class="card">
+  <table>
+    <thead><tr><th>Data</th><th>Atividade</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>11/03</td><td>Análise do sistema antigo (terapia-matching / Manus)</td><td>Schema com 18 tabelas mapeado, algoritmo de matching documentado</td></tr>
+      <tr><td>11/03</td><td>Construção do frontend novo — Portal Admin</td><td>Dashboard, Pacientes, Terapeutas, Atribuições, Matching (4 modos)</td></tr>
+      <tr><td>12/03</td><td>Construção do frontend — Portal Terapeuta</td><td>Meu Perfil, Minhas Atribuições, Meu Saldo</td></tr>
+      <tr><td>12/03</td><td>Deploy Vercel — novo sistema + sistema antigo</td><td>cerebro-terapia-acolher.vercel.app | old-terapia-acolher.vercel.app</td></tr>
+      <tr><td>12/03</td><td>Resolução do erro no sistema antigo (OAuth crash)</td><td>Sistema antigo acessível sem autenticação para referência</td></tr>
+      <tr><td>13/03</td><td>Call com Rodrigo (1h08min)</td><td>6 prioridades definidas, acesso ao ManyChat recebido</td></tr>
+      <tr><td>13/03</td><td>Criação do backend novo do zero</td><td>Node.js + Express + MySQL + Drizzle ORM, todas as 6 prioridades</td></tr>
+      <tr><td>13/03</td><td>PRIORIDADES.md + ROADMAP v3.0</td><td>Documentação completa criada e publicada no GitHub</td></tr>
+      <tr><td>16/03</td><td>Análise profunda do sistema original (ManyChat + Kiwify)</td><td>Fluxo exato mapeado: custom fields IDs, tag IDs, flow namespaces</td></tr>
+      <tr><td>16/03</td><td>Reescrita completa das integrações no backend novo</td><td>Fluxo ManyChat idêntico ao original + melhorias</td></tr>
+      <tr><td style="font-weight:700;color:var(--teal)">18/03</td><td><strong>Provisionamento VPS Hostinger</strong></td><td>Ubuntu 24.04, Node.js 20, MySQL 8.0, Nginx, PM2 instalados</td></tr>
+      <tr><td style="font-weight:700;color:var(--teal)">18/03</td><td><strong>Deploy do backend na VPS</strong></td><td>API rodando em PM2, banco com 11 tabelas, Nginx reverse proxy</td></tr>
+      <tr><td style="font-weight:700;color:var(--teal)">18/03</td><td><strong>Frontend conectado à API real</strong></td><td>8 páginas reescritas: removidos todos os dados mock</td></tr>
+      <tr><td style="font-weight:700;color:var(--teal)">18/03</td><td><strong>Deploy do frontend na VPS</strong></td><td>Nginx SPA com cache de assets — http://76.13.70.229</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ 3. ANÁLISE DO SISTEMA ORIGINAL ══ -->
+<div class="sec-label">Diagnóstico</div>
+<div class="sec-title">Análise do Sistema Original (Manus)</div>
+<p class="sec-sub">O que foi descoberto ao analisar o código-fonte do sistema atual</p>
+
+<div class="two-col">
+  <div class="card">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--red);margin-bottom:12px">🔴 Bugs Críticos</div>
+    <ul class="done-list">
+      <li><span class="tick" style="background:var(--red)">!</span>Saldo de leads fixo em 10 para todos os terapeutas novos</li>
+      <li><span class="tick" style="background:var(--red)">!</span>Webhooks Kiwify pendentes não vinculados ao cadastro</li>
+      <li><span class="tick" style="background:var(--red)">!</span>Cadastro público não salvava campos de turnos e público atendido</li>
+      <li><span class="tick" style="background:var(--red)">!</span>Autorização enviava <code style="background:#fef2f2;padding:1px 4px;border-radius:3px;font-size:11px">limiteLeads30Dias</code> mas API esperava <code style="background:#fef2f2;padding:1px 4px;border-radius:3px;font-size:11px">saldoLeads</code></li>
+    </ul>
+  </div>
+  <div class="card">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--amber);margin-bottom:12px">🟡 Código Legado</div>
+    <ul class="done-list">
+      <li><span class="tick" style="background:var(--amber)">!</span>Integração Z-API (abandonada — derrubava chips)</li>
+      <li><span class="tick" style="background:var(--amber)">!</span>Telas mortas: Debug Logs, Histórico Z-API, Análise Mensalidades</li>
+      <li><span class="tick" style="background:var(--amber)">!</span>Feedback Pacientes, Comparação Envios, Métricas Terapeuta</li>
+      <li><span class="tick" style="background:var(--amber)">!</span>Autenticação via OAuth do Manus (não portável)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Fluxo real do sistema original mapeado</div>
+  <div style="font-size:12px;color:var(--slate-600);margin-bottom:10px"><strong>ManyChat → Paciente:</strong></div>
+  <div class="flow">
+    <div class="flow-step">ManyChat envia POST</div><div class="flow-arrow">→</div>
+    <div class="flow-step">/api/receber-paciente</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Cria paciente no BD</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Fila de matching (30s)</div><div class="flow-arrow">→</div>
+    <div class="flow-step">Notifica via tag ManyChat</div>
+  </div>
+  <div style="font-size:12px;color:var(--slate-600);margin-top:14px;margin-bottom:10px"><strong>Kiwify → Terapeuta:</strong></div>
+  <div class="flow">
+    <div class="flow-step blue">Compra aprovada</div><div class="flow-arrow">→</div>
+    <div class="flow-step blue">Webhook /api/kiwify-webhook</div><div class="flow-arrow">→</div>
+    <div class="flow-step blue">Identifica plano → leads</div><div class="flow-arrow">→</div>
+    <div class="flow-step blue">Soma saldo ou guarda pendente</div>
+  </div>
+  <div style="font-size:12px;color:var(--slate-600);margin-top:14px;margin-bottom:10px"><strong>Notificação após matching (exata do original):</strong></div>
+  <div class="flow">
+    <div class="flow-step navy">setCustomField() ×5</div><div class="flow-arrow">→</div>
+    <div class="flow-step navy">delay(2000ms)</div><div class="flow-arrow">→</div>
+    <div class="flow-step navy">addTag() → dispara flow</div><div class="flow-arrow">→</div>
+    <div class="flow-step navy">ManyChat envia mensagem</div>
+  </div>
+</div>
+
+<!-- ══ 4. FRONTEND NOVO ══ -->
+<div class="sec-label">Frontend</div>
+<div class="sec-title">Frontend Novo — React + Tailwind CSS</div>
+<p class="sec-sub">Interface construída do zero com design moderno e dois portais distintos</p>
+
+<div class="two-col">
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">📊 Portal Admin</div>
+    <ul class="done-list">
+      <li><span class="tick">✓</span>Dashboard com métricas em tempo real</li>
+      <li><span class="tick">✓</span>Terapeutas: lista, modal, autorização, filtros</li>
+      <li><span class="tick">✓</span>Filtro por público atendido (H/M/NB/Indiferente)</li>
+      <li><span class="tick">✓</span>Pacientes: modal clicável, atribuição manual inline</li>
+      <li><span class="tick">✓</span>Atribuições: histórico completo</li>
+      <li><span class="tick">✓</span>Matching: 4 modos com painel de controle</li>
+    </ul>
+  </div>
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">👤 Portal Terapeuta</div>
+    <ul class="done-list">
+      <li><span class="tick">✓</span>Meu Perfil (edição de dados, turnos, abordagem)</li>
+      <li><span class="tick">✓</span>Minhas Atribuições (pacientes recebidos)</li>
+      <li><span class="tick">✓</span>Meu Saldo (histórico de compras e leads)</li>
+      <li><span class="tick">✓</span>Autenticação via token temporário (sem senha)</li>
+    </ul>
+    <div style="margin-top:12px;font-size:12px;color:var(--slate-500)">
+      <strong>Matching — 4 modos:</strong><br>
+      Automático / Semi-auto (IA sugere) / Manual / Pausado
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px">Stack tecnológica</div>
+  <div class="two-col">
+    <ul class="mini-list">
+      <li>React + React Router DOM</li>
+      <li>Tailwind CSS 4</li>
+      <li>TypeScript</li>
+      <li>Vite (build tool)</li>
+    </ul>
+    <ul class="mini-list">
+      <li>Lucide React (ícones)</li>
+      <li>Framer Motion (animações)</li>
+      <li>API client próprio (sem tRPC)</li>
+      <li>Deploy: VPS Hostinger (Nginx SPA)</li>
+    </ul>
+  </div>
+  <div class="info-box blue" style="margin-top:14px">
+    <span class="icon">🔗</span>
+    <div>
+      <strong>http://76.13.70.229</strong> — sistema live (frontend + API)<br>
+      <strong>old-terapia-acolher.vercel.app</strong> — sistema antigo para referência
+    </div>
+  </div>
+</div>
+
+<!-- ══ 5. BACKEND NOVO ══ -->
+<div class="sec-label page-break">Backend</div>
+<div class="sec-title">Backend Novo — Node.js + Express + MySQL</div>
+<p class="sec-sub">API REST construída do zero, pronta para deploy no VPS Hostinger</p>
+
+<div class="card">
+  <div class="file-tree">
+<span class="dir">backend/</span>
+├── <span class="dir">src/</span>
+│   ├── <span class="file">index.ts</span>              <span class="note">← servidor Express, todas as rotas registradas</span>
+│   ├── <span class="dir">db/</span>
+│   │   ├── <span class="file">schema.ts</span>         <span class="note">← 10 tabelas Drizzle ORM</span>
+│   │   └── <span class="file">index.ts</span>          <span class="note">← conexão MySQL pool</span>
+│   ├── <span class="dir">routes/</span>
+│   │   ├── <span class="file">dashboard.ts</span>      <span class="note">← GET /api/dashboard/stats</span>
+│   │   ├── <span class="file">therapists.ts</span>     <span class="note">← CRUD + /api/public/register</span>
+│   │   ├── <span class="file">patients.ts</span>       <span class="note">← CRUD pacientes</span>
+│   │   ├── <span class="file">assignments.ts</span>    <span class="note">← atribuições + replenishment (P3)</span>
+│   │   ├── <span class="file">matching.ts</span>       <span class="note">← mode, run, suggest, assign, log</span>
+│   │   ├── <span class="file">webhooks-kiwify.ts</span> <span class="note">← POST receber + GET listar (P6)</span>
+│   │   ├── <span class="file">webhooks-manychat.ts</span> <span class="note">← POST patient + GET received/sent (P4+P5)</span>
+│   │   ├── <span class="file">manychat-config.ts</span> <span class="note">← GET/PUT config + POST test</span>
+│   │   └── <span class="file">therapist-portal.ts</span> <span class="note">← /api/therapist/me/*</span>
+│   ├── <span class="dir">services/</span>
+│   │   ├── <span class="file">matching.ts</span>       <span class="note">← algoritmo P2 + confirmAssignment</span>
+│   │   └── <span class="file">manychat.ts</span>       <span class="note">← setCustomField, addTag, notifyPatient/Therapist</span>
+│   └── <span class="dir">middleware/</span>
+│       └── <span class="file">auth.ts</span>           <span class="note">← adminAuth + therapistAuth + generateToken</span>
+├── <span class="file">.env.example</span>
+├── <span class="file">drizzle.config.ts</span>
+└── <span class="file">package.json</span>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Endpoints de API</div>
+  <table>
+    <thead><tr><th>Método</th><th>Rota</th><th>Descrição</th><th>Auth</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td>/api/dashboard/stats</td><td>Estatísticas do sistema</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>GET/POST/PUT</td><td>/api/therapists</td><td>CRUD terapeutas + autorizar</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/api/public/register</td><td>Cadastro público do terapeuta (P1)</td><td><span class="badge badge-done">Público</span></td></tr>
+      <tr><td>GET/POST/PUT</td><td>/api/patients</td><td>CRUD pacientes</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>GET</td><td>/api/assignments</td><td>Listar atribuições</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/api/assignments/replenishment</td><td>Solicitar reposição de lead (P3)</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>GET/PUT</td><td>/api/matching/mode</td><td>Obter/alterar modo de matching</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/api/matching/run</td><td>Rodar matching para pendentes (P2)</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/api/matching/suggest</td><td>Sugerir terapeuta (modo semi-auto)</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/api/matching/assign</td><td>Confirmar atribuição manual</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/api/webhooks/kiwify</td><td>Receber compra da Kiwify (P1+P6)</td><td><span class="badge badge-done">Público</span></td></tr>
+      <tr><td>GET</td><td>/api/webhooks/kiwify</td><td>Listar webhooks da Kiwify (P6)</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>POST</td><td>/api/webhooks/manychat/patient</td><td>Receber paciente do ManyChat (P4)</td><td><span class="badge badge-done">Público</span></td></tr>
+      <tr><td>GET</td><td>/api/webhooks/manychat/received</td><td>Listar webhooks recebidos (P4)</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>GET</td><td>/api/webhooks/manychat/sent</td><td>Listar webhooks enviados (P5)</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>GET/PUT</td><td>/api/manychat/config</td><td>Configurar ManyChat via UI</td><td><span class="badge badge-info">Admin</span></td></tr>
+      <tr><td>GET</td><td>/api/therapist/me</td><td>Portal: perfil do terapeuta</td><td><span class="badge badge-pend">Token</span></td></tr>
+      <tr><td>GET</td><td>/api/therapist/me/assignments</td><td>Portal: atribuições do terapeuta</td><td><span class="badge badge-pend">Token</span></td></tr>
+      <tr><td>GET</td><td>/api/therapist/me/balance</td><td>Portal: saldo e histórico</td><td><span class="badge badge-pend">Token</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ 6. BANCO DE DADOS ══ -->
+<div class="sec-label">Banco de Dados</div>
+<div class="sec-title">Schema MySQL — 10 Tabelas</div>
+<p class="sec-sub">Estrutura do banco de dados do novo sistema</p>
+
+<div class="card">
+  <table>
+    <thead><tr><th>Tabela</th><th>Campos principais</th><th>Finalidade</th></tr></thead>
+    <tbody>
+      <tr><td>therapists</td><td>name, whatsapp, gender, approach, specialties, balance, manychat_subscriber_id, shifts, serves_*</td><td>Cadastro de terapeutas</td></tr>
+      <tr><td>patients</td><td>name, phone, gender, preferred_gender, shift, reason, therapy_for, child_name, manychat_subscriber_id</td><td>Cadastro de pacientes</td></tr>
+      <tr><td>assignments</td><td>patient_id, therapist_id, status, compatibility_score, match_reason, notified_*</td><td>Atribuições realizadas</td></tr>
+      <tr><td>matching_config</td><td>mode, weight_gender, weight_shift, weight_specialty</td><td>Configuração do algoritmo</td></tr>
+      <tr><td>matching_log</td><td>patient_id, therapist_id, score, reason, success, error</td><td>Log de decisões do matching</td></tr>
+      <tr><td>manychat_config</td><td>api_key, flow_ns_*, tag_id_*, cf_id_* (todos os IDs do original)</td><td>Config ManyChat gerenciada via UI</td></tr>
+      <tr><td>manychat_subscribers</td><td>whatsapp, subscriber_id, therapist_id, patient_id</td><td>Lookup WhatsApp → Subscriber ID</td></tr>
+      <tr><td>webhooks_kiwify</td><td>order_id, customer_*, offer_name, leads_qty, processing_status, therapist_id</td><td>Log de compras Kiwify (P6)</td></tr>
+      <tr><td>webhooks_manychat_received</td><td>type, contact_*, gender, shift, reason, processing_status, patient_id</td><td>Log de webhooks recebidos (P4)</td></tr>
+      <tr><td>webhooks_manychat_sent</td><td>type, recipient_*, assignment_id, status, payload_sent, response_received</td><td>Log de notificações enviadas (P5)</td></tr>
+      <tr><td>lead_replenishments</td><td>therapist_id, assignment_id, contacted_0h/24h/72h/15d, status</td><td>Solicitações de reposição (P3)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ 7. AS 6 PRIORIDADES ══ -->
+<div class="sec-label page-break">Prioridades</div>
+<div class="sec-title">As 6 Prioridades — Status Detalhado</div>
+<p class="sec-sub">Definidas na call com Rodrigo em 13/03/2026 — todas implementadas no código</p>
+
+<div class="card">
+
+  <div class="phase-row">
+    <div class="phase-num">1</div>
+    <div class="phase-content">
+      <div class="phase-title">Fluxo de entrada do terapeuta via Kiwify</div>
+      <div class="phase-desc">
+        Terapeuta compra na Kiwify → Kiwify envia webhook → sistema registra → Kiwify envia e-mail com link de cadastro → terapeuta preenche formulário → sistema processa webhooks pendentes automaticamente → saldo correto creditado → Rodrigo aprova → terapeuta entra na fila.
+        <br><br>
+        <strong>Melhoria sobre o original:</strong> bug do saldo fixo em 10 corrigido. Agora o saldo é calculado a partir dos webhooks Kiwify pendentes reais.
+      </div>
+    </div>
+    <div class="phase-status"><span class="badge badge-done">✓ Implementado</span></div>
+  </div>
+
+  <div class="phase-row">
+    <div class="phase-num">2</div>
+    <div class="phase-content">
+      <div class="phase-title">Matching automático com filtros eliminatórios</div>
+      <div class="phase-desc">
+        As exigências do paciente são filtros obrigatórios. Gênero preferido e turno eliminam terapeutas incompatíveis independentemente da posição na fila. Dentro dos elegíveis: quem está há mais tempo sem receber lead tem prioridade. Score de compatibilidade (especialidades + abordagem) desempata.
+        <br><br>
+        <strong>Modos disponíveis:</strong> Automático / Semi-auto (IA sugere) / Manual / Pausado
+      </div>
+    </div>
+    <div class="phase-status"><span class="badge badge-done">✓ Implementado</span></div>
+  </div>
+
+  <div class="phase-row">
+    <div class="phase-num">3</div>
+    <div class="phase-content">
+      <div class="phase-title">Reposição de lead (lead fantasma)</div>
+      <div class="phase-desc">
+        Terapeuta que reporta paciente sem resposta pode solicitar até 3 reposições por ciclo. Deve informar que realizou contato em 0h, 24h, 72h e 15 dias (protocolo). Admin aprova → 1 lead é creditado automaticamente.
+      </div>
+    </div>
+    <div class="phase-status"><span class="badge badge-done">✓ Implementado</span></div>
+  </div>
+
+  <div class="phase-row">
+    <div class="phase-num">4</div>
+    <div class="phase-content">
+      <div class="phase-title">Lista de webhooks recebidos do ManyChat</div>
+      <div class="phase-desc">
+        Todos os dados que chegam do ManyChat ficam registrados: nome, telefone, gênero, turno, motivo, subscriber_id, tipo de atendimento, status de processamento, payload completo e data. Endpoint: <code style="background:var(--slate-100);padding:1px 5px;border-radius:3px">GET /api/webhooks/manychat/received</code>
+      </div>
+    </div>
+    <div class="phase-status"><span class="badge badge-done">✓ Implementado</span></div>
+  </div>
+
+  <div class="phase-row">
+    <div class="phase-num">5</div>
+    <div class="phase-content">
+      <div class="phase-title">Lista de webhooks enviados ao ManyChat</div>
+      <div class="phase-desc">
+        Todos os envios ao ManyChat ficam registrados: setCustomField, addTag, notificações ao paciente e ao terapeuta. Status de cada envio (success/error), payload enviado, resposta recebida. Endpoint: <code style="background:var(--slate-100);padding:1px 5px;border-radius:3px">GET /api/webhooks/manychat/sent</code>
+      </div>
+    </div>
+    <div class="phase-status"><span class="badge badge-done">✓ Implementado</span></div>
+  </div>
+
+  <div class="phase-row" style="border-bottom:none">
+    <div class="phase-num">6</div>
+    <div class="phase-content">
+      <div class="phase-title">Lista de webhooks recebidos da Kiwify</div>
+      <div class="phase-desc">
+        Todas as compras da Kiwify ficam registradas: nome/e-mail/telefone do terapeuta, produto, oferta, leads correspondentes, valor, status de vinculação. Webhook pendente = terapeuta ainda não cadastrou. Endpoint: <code style="background:var(--slate-100);padding:1px 5px;border-radius:3px">GET /api/webhooks/kiwify</code>
+      </div>
+    </div>
+    <div class="phase-status"><span class="badge badge-done">✓ Implementado</span></div>
+  </div>
+
+</div>
+
+<!-- ══ 8. INTEGRAÇÃO MANYCHAT ══ -->
+<div class="sec-label">Integrações</div>
+<div class="sec-title">Integração ManyChat — Detalhes Técnicos</div>
+<p class="sec-sub">Fluxo idêntico ao sistema original, com melhorias de rastreabilidade</p>
+
+<div class="card">
+  <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Custom Fields e Tags (IDs reais do sistema)</div>
+  <div class="two-col">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-500);margin-bottom:8px">Para o Terapeuta (quando paciente é atribuído)</div>
+      <table>
+        <thead><tr><th>Campo</th><th>ID</th></tr></thead>
+        <tbody>
+          <tr><td>NOME CONTATO</td><td>14362950</td></tr>
+          <tr><td>CONTATO WPP</td><td>14362951</td></tr>
+          <tr><td>TURNO CONTATO</td><td>14362952</td></tr>
+          <tr><td>MOTIVO CONTATO</td><td>14362953</td></tr>
+          <tr><td>paciente_atribuido</td><td>14300039</td></tr>
+          <tr><td>Tag: NOVO PACIENTE</td><td>81766426</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-500);margin-bottom:8px">Para o Paciente (quando terapeuta é atribuído)</div>
+      <table>
+        <thead><tr><th>Campo</th><th>ID</th></tr></thead>
+        <tbody>
+          <tr><td>terapeuta_nome</td><td>14045578</td></tr>
+          <tr><td>terapeuta_whatsapp</td><td>14045579</td></tr>
+          <tr><td>terapeuta_atribuido</td><td>14061515</td></tr>
+          <tr><td>paciente_atribuido</td><td>14300039</td></tr>
+          <tr><td>Tag: TERAPEUTA ATRIBUÍDO</td><td>81766427</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-500);margin-bottom:8px">Flow Namespaces</div>
+    <table>
+      <thead><tr><th>Flow</th><th>Namespace</th></tr></thead>
+      <tbody>
+        <tr><td>Notificação ao Terapeuta</td><td><code>content20260219182249_152653</code></td></tr>
+        <tr><td>Notificação ao Paciente</td><td><code>content20260219182249_152654</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ 9. KIWIFY ══ -->
+<div class="card">
+  <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px">Mapeamento de Pacotes Kiwify → Leads</div>
+  <div class="two-col">
+    <table>
+      <thead><tr><th>Oferta</th><th>Leads</th></tr></thead>
+      <tbody>
+        <tr><td>Acolher Light / Light 3 Contatos</td><td>3</td></tr>
+        <tr><td>+5 Contatos / Mais 5 Contatos</td><td>5</td></tr>
+        <tr><td>Mensal / +10 Contatos</td><td>10</td></tr>
+        <tr><td>De Volta - 12 Contatos</td><td>12</td></tr>
+        <tr><td>Acolher Mais / Pacote 15 Contatos</td><td>15</td></tr>
+      </tbody>
+    </table>
+    <table>
+      <thead><tr><th>Oferta</th><th>Leads</th></tr></thead>
+      <tbody>
+        <tr><td>Acolher Máximo / Pacote 20 Contatos</td><td>20</td></tr>
+        <tr><td>Infinity</td><td>25</td></tr>
+        <tr><td>Infinity Top</td><td>28</td></tr>
+        <tr><td>Trimestral</td><td>30</td></tr>
+        <tr><td>Semestral</td><td>60</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="info-box blue" style="margin-top:14px">
+    <span class="icon">ℹ️</span>
+    <span>Identificação usa 5 fallbacks em ordem: plan_name → plan_id → product_offer_name → product_name → product_id. Match por substring com chaves ordenadas do maior para o menor (evita matches parciais incorretos).</span>
+  </div>
+</div>
+
+<!-- ══ 10. O QUE FALTA ══ -->
+<div class="sec-label">Próximos Passos</div>
+<div class="sec-title">O que precisa acontecer para ir a produção</div>
+<p class="sec-sub">Bloqueadores e próximas entregas</p>
+
+<div class="card">
+  <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:12px">✅ Infraestrutura deployed (18/03/2026)</div>
+  <ul class="done-list">
+    <li><span class="tick">✓</span><div><strong>VPS Hostinger</strong> — KVM 2, 2 vCPU, 8GB RAM, 100GB NVMe, São Paulo (Ubuntu 24.04)</div></li>
+    <li><span class="tick">✓</span><div><strong>Backend</strong> — Node.js 20 + PM2 (auto-restart) + Nginx reverse proxy</div></li>
+    <li><span class="tick">✓</span><div><strong>Banco de dados</strong> — MySQL 8.0 local, 11 tabelas criadas via Drizzle</div></li>
+    <li><span class="tick">✓</span><div><strong>Frontend</strong> — Vite build (321KB JS + 33KB CSS) servido pelo Nginx como SPA</div></li>
+    <li><span class="tick">✓</span><div><strong>8 páginas conectadas à API real</strong> — Dashboard, Terapeutas, Pacientes, Atribuições, Matching, Meu Perfil, Minhas Atribuições, Meu Saldo</div></li>
+  </ul>
+  <div class="info-box blue" style="margin-top:14px">
+    <span class="icon">🌐</span>
+    <div>
+      <strong>Frontend:</strong> http://76.13.70.229<br>
+      <strong>API:</strong> http://76.13.70.229/api/<br>
+      <strong>Health:</strong> http://76.13.70.229/health
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:12px">🟡 Pendente para ir a produção</div>
+  <div class="two-col">
+    <ul class="mini-list">
+      <li>Domínio apontando para 76.13.70.229</li>
+      <li>SSL via Certbot / Let's Encrypt</li>
+      <li>Configurar webhook Kiwify para a URL do sistema</li>
+      <li>Inserir API Key do ManyChat via painel admin</li>
+    </ul>
+    <ul class="mini-list">
+      <li>Testar fluxo E2E com dados reais</li>
+      <li>Páginas de listagem de webhooks no frontend</li>
+      <li>Botão de re-envio para webhooks com erro</li>
+      <li>Migrar dados históricos do sistema antigo (opcional)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══ 11. ARQUITETURA ALVO ══ -->
+<div class="sec-label">Arquitetura</div>
+<div class="sec-title">Arquitetura do Novo Sistema</div>
+
+<div class="card">
+  <div class="code-block">
+<span class="cm">┌──────────────────────────────────────────────────────┐</span>
+<span class="cm">│                   TERAPIA ACOLHER                    │</span>
+<span class="cm">└──────────────────────────────────────────────────────┘</span>
+
+<span class="kw">ManyChat</span> <span class="pu">──────────────────────────► POST /api/webhooks/manychat/patient</span>
+  <span class="cm">(paciente preenche formulário)            (cria paciente + dispara matching)</span>
+
+<span class="kw">Kiwify</span>  <span class="pu">──────────────────────────► POST /api/webhooks/kiwify</span>
+  <span class="cm">(terapeuta compra pacote)                 (registra webhook + soma saldo)</span>
+
+<span class="kw">Admin</span>   <span class="pu">──────────────────────────► cerebro-terapia-acolher.vercel.app</span>
+  <span class="cm">(Rodrigo / Dani)                          React → GET/PUT /api/*</span>
+
+<span class="kw">Terapeuta</span> <span class="pu">────────────────────────► cerebro-terapia-acolher.vercel.app/terapeuta</span>
+  <span class="cm">(link via ManyChat)                       token → /api/therapist/me/*</span>
+
+<span class="cm">─────────────────────────────────────────────────────────</span>
+
+<span class="kw">VPS Hostinger SP</span>  <span class="cm">← backend Node.js + MySQL</span>
+  <span class="st">Node.js</span> <span class="pu">(PM2)  Port 3000</span>
+  <span class="st">Nginx</span>          <span class="pu">SSL + proxy reverso</span>
+  <span class="st">MySQL</span>          <span class="pu">terapia_acolher database</span>
+
+<span class="kw">Vercel</span>            <span class="cm">← frontend estático</span>
+  <span class="st">cerebro-terapia-acolher.vercel.app</span>
+  </div>
+</div>
+
+<!-- ══ REPOSITÓRIO ══ -->
+<div class="info-box green">
+  <span class="icon">💾</span>
+  <div>
+    <strong>Repositório GitHub:</strong> github.com/vertixmkt/C-rebro-Terapia-Acolher<br>
+    <span style="font-size:12px;opacity:.85">Código completo: backend/, frontend/, terapia-matching-source/ (original), PRIORIDADES.md, ROADMAP v3.0</span>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  Relatório atualizado em 18 de Março de 2026 &nbsp;·&nbsp; Matheus Pinheiro &nbsp;·&nbsp;
+  Sistema Terapia Acolher — v1.0 deployed
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

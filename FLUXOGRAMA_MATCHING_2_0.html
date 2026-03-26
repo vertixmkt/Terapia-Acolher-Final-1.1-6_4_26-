@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fluxograma Matching v2.0 — Terapia Acolher</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a1d2e 0%, #0f1117 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 40px 0 32px;
+      text-align: center;
+    }
+
+    .header-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      background: rgba(234, 88, 12, 0.12);
+      border: 1px solid rgba(234, 88, 12, 0.25);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fb923c;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #94a3b8;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 40px;
+      padding: 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+    }
+
+    .nav a {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #94a3b8;
+      text-decoration: none;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .nav a:hover {
+      color: #fb923c;
+      background: rgba(234, 88, 12, 0.08);
+      border-color: rgba(234, 88, 12, 0.2);
+    }
+
+    /* Sections */
+    .section {
+      margin-bottom: 48px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .section-number {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(234, 88, 12, 0.12);
+      border: 1px solid rgba(234, 88, 12, 0.25);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fb923c;
+    }
+
+    .section h2 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .section-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 20px;
+      padding-left: 44px;
+    }
+
+    /* Mermaid chart container */
+    .chart-container {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 32px 24px;
+      overflow-x: auto;
+    }
+
+    .chart-container .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    .chart-container .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* Tables */
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .info-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: rgba(234, 88, 12, 0.08);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #fb923c;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .info-table td {
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #cbd5e1;
+    }
+
+    .info-table tr:hover td {
+      background: rgba(255,255,255,0.02);
+    }
+
+    /* Summary cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .summary-card {
+      padding: 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+    }
+
+    .summary-card strong {
+      display: block;
+      font-size: 13px;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+
+    .summary-card span {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tag-green { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+    .tag-red { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+    .tag-yellow { background: rgba(234,179,8,0.12); color: #facc15; border: 1px solid rgba(234,179,8,0.2); }
+    .tag-blue { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+    .tag-purple { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+      margin: 48px 0;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">Documentacao Tecnica</div>
+  <h1>Fluxograma do Matching v2.0</h1>
+  <p>Algoritmo hibrido de matching automatico — Terapia Acolher<br>
+  Combina sistema de referencia (elegibilidade, cascata) + sistema atual (distribuicao proporcional)</p>
+</div>
+
+<div class="container">
+
+  <!-- Nav -->
+  <div class="nav">
+    <a href="#flow">Fluxo Principal</a>
+    <a href="#funnel">Visao em Funil</a>
+    <a href="#gender">Filtro de Genero</a>
+    <a href="#score">Score e Cascata</a>
+    <a href="#distribution">Distribuicao</a>
+    <a href="#entries">Vias de Entrada</a>
+    <a href="#failures">Pontos de Falha</a>
+    <a href="#summary">Resumo</a>
+  </div>
+
+  <!-- 1. Fluxo Principal -->
+  <div class="section" id="flow">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <h2>Fluxo Principal Completo</h2>
+    </div>
+    <p class="section-desc">Os 12 passos do matching, da entrada do paciente ate a notificacao.</p>
+    <div class="chart-container">
+      <div class="mermaid">
+flowchart TD
+    A["1. Entrada do paciente\nManyChat / Cadastro Rapido / API"] --> B{"2. Paciente elegivel?\nstatus=pendente\nmotivo preenchido\nWhatsApp valido"}
+    B -- "Nao" --> B1["Encerrar fluxo\nRegistrar log"]
+    B -- "Sim" --> C["3. Buscar terapeutas\nAplicar filtros eliminatorios"]
+
+    C --> D{"Filtros BIDIRECIONAIS\nstatus ativo · saldo > 0\ngenero paciente↔terapeuta\nturno · casal · infantil"}
+    D -- "0 candidatos" --> D1["Sem match\nPaciente pendente para admin"]
+    D -- "N candidatos" --> E["4. Limite diario proporcional\nmax 1, ceil saldo / 20"]
+
+    E --> E2{"Alguem dentro\ndo limite?"}
+    E2 -- "Nao" --> E3["Todos no limite hoje\nPaciente pendente"]
+    E2 -- "Sim" --> F["5. Calcular score\n50 + categorias x 10\n12 categorias de keywords"]
+
+    F --> G1{"6a. Nivel 1\nscore >= 85%?"}
+    G1 -- "Sim" --> J["7. Distribuicao de carga"]
+    G1 -- "Nao" --> G2{"6b. Nivel 2\nscore >= 75%?"}
+    G2 -- "Sim" --> J
+    G2 -- "Nao" --> G3{"6c. Nivel 3\nscore >= 65%?"}
+    G3 -- "Sim" --> J
+    G3 -- "Nao" --> G4["Nenhum terapeuta compativel\nPaciente pendente para admin"]
+
+    J --> J1["Ordenar:\n1. Ultima atribuicao mais antiga\n2. Desempate: maior score"]
+    J1 --> L["Selecionar 1 terapeuta"]
+
+    L --> M["8. Criar atribuicao\nstatus = pendente"]
+    M --> N["9. Deduzir saldo\nGREATEST 0, saldo - 1"]
+    N --> O["10. Paciente → atribuido"]
+    O --> P["11. Registrar log"]
+    P --> Q["12. Notificacoes assincrono"]
+
+    Q --> Q1["Paciente:\nManyChat WhatsApp"]
+    Q --> Q2["Terapeuta:\nTelegram"]
+    Q1 --> T["Sucesso\nAtribuicao confirmada"]
+    Q2 --> T
+
+    classDef inicio fill:#dff3e4,stroke:#2f855a,color:#1a202c,stroke-width:2px
+    classDef processo fill:#fdf3d5,stroke:#b7791f,color:#1a202c,stroke-width:1.5px
+    classDef decisao fill:#dceefe,stroke:#2b6cb0,color:#1a202c,stroke-width:1.5px
+    classDef falha fill:#fde2e2,stroke:#c53030,color:#1a202c,stroke-width:1.5px
+    classDef sucesso fill:#d6f5e3,stroke:#2f855a,color:#1a202c,stroke-width:2px
+    classDef notif fill:#e8daef,stroke:#6c3483,color:#1a202c,stroke-width:1.5px
+
+    class A inicio
+    class B,D,E2,G1,G2,G3 decisao
+    class C,E,F,J,J1,L,M,N,O,P,Q processo
+    class B1,D1,E3,G4 falha
+    class T sucesso
+    class Q1,Q2 notif
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 2. Funil -->
+  <div class="section" id="funnel">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <h2>Visao em Funil</h2>
+    </div>
+    <p class="section-desc">Versao simplificada mostrando o afunilamento de candidatos em cada etapa.</p>
+    <div class="chart-container">
+      <div class="mermaid">
+flowchart LR
+    A["Novo paciente\nWebhook / Admin"] --> B{"Elegivel?"}
+    B -- "Sim" --> C["Terapeutas ativos\ncom saldo > 0"]
+    C --> D["Genero BIDIRECIONAL\npaciente↔terapeuta"]
+    D --> E["Turno compativel\n+ casal / infantil"]
+    E --> F["Dentro do\nlimite diario"]
+    F --> G["Score por keywords\n12 categorias\n50 a 100"]
+    G --> H["Cascata\n85 → 75 → 65"]
+    H --> I["Distribuicao de carga\nquem espera mais"]
+    I --> J["1 terapeuta\nselecionado"]
+    J --> K["Criar atribuicao\ndeduzir saldo"]
+    K --> L["Notificar ambos\npaciente + terapeuta"]
+
+    B -- "Nao" --> X["Fluxo encerra"]
+
+    classDef caixa fill:#f7fafc,stroke:#4a5568,color:#1a202c,stroke-width:1.5px
+    classDef parada fill:#fde2e2,stroke:#c53030,color:#1a202c,stroke-width:1.5px
+
+    class A,C,D,E,F,G,H,I,J,K,L caixa
+    class B caixa
+    class X parada
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 3. Genero Bidirecional -->
+  <div class="section" id="gender">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <h2>Filtro Bidirecional de Genero</h2>
+    </div>
+    <p class="section-desc">Na v2.0, o filtro de genero verifica dos dois lados: a preferencia do paciente E a preferencia do terapeuta.</p>
+    <div class="chart-container">
+      <div class="mermaid">
+flowchart TD
+    P["Paciente\ngenero: M/F/NB\npreferencia: M/F/NB/indifferent"]
+    T["Terapeuta\ngenero: M/F/NB\nserves_gender: M/F/NB/todos"]
+
+    P --> C1{"Paciente quer\ngenero especifico?\npreferred ≠ indifferent"}
+    C1 -- "Sim" --> V1{"Terapeuta.genero\n= paciente.preferred?"}
+    C1 -- "Nao" --> C2
+
+    V1 -- "Sim" --> C2{"Terapeuta aceita\ngenero do paciente?\nserves = todos\nOU serves = paciente.genero"}
+    V1 -- "Nao" --> X1["CORTADO\nPaciente quer outro genero"]
+
+    C2 -- "Sim" --> OK["PASSA\nGenero compativel\nnos dois sentidos"]
+    C2 -- "Nao" --> X2["CORTADO\nTerapeuta nao atende\nesse genero"]
+
+    T --> C2
+
+    classDef ok fill:#d6f5e3,stroke:#2f855a,color:#1a202c,stroke-width:2px
+    classDef corte fill:#fde2e2,stroke:#c53030,color:#1a202c,stroke-width:1.5px
+    classDef check fill:#dceefe,stroke:#2b6cb0,color:#1a202c,stroke-width:1.5px
+    classDef dado fill:#fdf3d5,stroke:#b7791f,color:#1a202c,stroke-width:1.5px
+
+    class P,T dado
+    class C1,V1,C2 check
+    class OK ok
+    class X1,X2 corte
+      </div>
+    </div>
+
+    <!-- Tabela de exemplos -->
+    <table class="info-table" style="margin-top: 20px;">
+      <thead>
+        <tr>
+          <th>Paciente</th>
+          <th>Pref. paciente</th>
+          <th>Terapeuta</th>
+          <th>Serves</th>
+          <th>Resultado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Homem</td><td>Mulher</td><td>Mulher</td><td>todos</td><td><span class="tag tag-green">Passa</span></td></tr>
+        <tr><td>Homem</td><td>Mulher</td><td>Mulher</td><td>F</td><td><span class="tag tag-red">Corta</span> terapeuta so atende mulheres</td></tr>
+        <tr><td>Mulher</td><td>Indifferent</td><td>Homem</td><td>F</td><td><span class="tag tag-red">Corta</span> terapeuta so atende mulheres</td></tr>
+        <tr><td>Mulher</td><td>Indifferent</td><td>Homem</td><td>todos</td><td><span class="tag tag-green">Passa</span></td></tr>
+        <tr><td>Mulher</td><td>Mulher</td><td>Homem</td><td>todos</td><td><span class="tag tag-red">Corta</span> paciente quer mulher</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 4. Score e Cascata -->
+  <div class="section" id="score">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <h2>Score de Compatibilidade e Cascata</h2>
+    </div>
+    <p class="section-desc">Combina motivo do paciente + abordagem + especialidades do terapeuta. Busca keywords em 12 categorias terapeuticas.</p>
+    <div class="chart-container">
+      <div class="mermaid">
+flowchart TD
+    A["Texto combinado:\nmotivo + abordagem + especialidades"] --> B["Buscar keywords\nem 12 categorias"]
+
+    B --> C1["ansiedade"]
+    B --> C2["depressao"]
+    B --> C3["relacionamento"]
+    B --> C4["trauma"]
+    B --> C5["infantil"]
+    B --> C6["comportamento"]
+    B --> C7["psicanalitica"]
+    B --> C8["humanista"]
+    B --> C9["cognitiva"]
+    B --> C10["estresse"]
+    B --> C11["luto"]
+    B --> C12["alimentar"]
+
+    C1 --> S["Contar categorias\nencontradas"]
+    C2 --> S
+    C3 --> S
+    C4 --> S
+    C5 --> S
+    C6 --> S
+    C7 --> S
+    C8 --> S
+    C9 --> S
+    C10 --> S
+    C11 --> S
+    C12 --> S
+
+    S --> SC["Score = 50 + N x 10\nmax 100"]
+
+    SC --> L1{"N >= 4?\nScore >= 85"}
+    L1 -- "Sim" --> R1["Nivel 1\nExcelente"]
+    L1 -- "Nao" --> L2{"N >= 3?\nScore >= 75"}
+    L2 -- "Sim" --> R2["Nivel 2\nBom"]
+    L2 -- "Nao" --> L3{"N >= 2?\nScore >= 65"}
+    L3 -- "Sim" --> R3["Nivel 3\nAceitavel"]
+    L3 -- "Nao" --> R4["Sem match\nPendente para admin"]
+
+    classDef cat fill:#e8f4fd,stroke:#2b6cb0,color:#1a202c,stroke-width:1px
+    classDef calc fill:#fdf3d5,stroke:#b7791f,color:#1a202c,stroke-width:1.5px
+    classDef nivel1 fill:#d6f5e3,stroke:#2f855a,color:#1a202c,stroke-width:2px
+    classDef nivel2 fill:#dff3e4,stroke:#38a169,color:#1a202c,stroke-width:1.5px
+    classDef nivel3 fill:#fefcbf,stroke:#d69e2e,color:#1a202c,stroke-width:1.5px
+    classDef falha fill:#fde2e2,stroke:#c53030,color:#1a202c,stroke-width:1.5px
+    classDef check fill:#dceefe,stroke:#2b6cb0,color:#1a202c,stroke-width:1.5px
+
+    class C1,C2,C3,C4,C5,C6,C7,C8,C9,C10,C11,C12 cat
+    class A,B,S,SC calc
+    class L1,L2,L3 check
+    class R1 nivel1
+    class R2 nivel2
+    class R3 nivel3
+    class R4 falha
+      </div>
+    </div>
+
+    <!-- Escala de score -->
+    <table class="info-table" style="margin-top: 20px;">
+      <thead>
+        <tr><th>Score</th><th>Categorias</th><th>Nivel</th><th>Acao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>100</td><td>5+</td><td><span class="tag tag-green">Nivel 1</span></td><td>Atribui automaticamente</td></tr>
+        <tr><td>90</td><td>4</td><td><span class="tag tag-green">Nivel 1</span></td><td>Atribui automaticamente</td></tr>
+        <tr><td>80</td><td>3</td><td><span class="tag tag-blue">Nivel 2</span></td><td>Atribui automaticamente</td></tr>
+        <tr><td>70</td><td>2</td><td><span class="tag tag-yellow">Nivel 3</span></td><td>Atribui automaticamente</td></tr>
+        <tr><td>60</td><td>1</td><td><span class="tag tag-red">Rejeitado</span></td><td>Paciente pendente para admin</td></tr>
+        <tr><td>50</td><td>0</td><td><span class="tag tag-red">Rejeitado</span></td><td>Paciente pendente para admin</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Keywords table -->
+    <table class="info-table" style="margin-top: 16px;">
+      <thead>
+        <tr><th>Categoria</th><th>Keywords</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>ansiedade</td><td>ansiedade, panico, medo, fobia, nervoso, preocupacao</td></tr>
+        <tr><td>depressao</td><td>depressao, tristeza, melancolia, desanimo, desmotivacao</td></tr>
+        <tr><td>relacionamento</td><td>relacionamento, casal, familia, divorcio, separacao, conflito, comunicacao</td></tr>
+        <tr><td>trauma</td><td>trauma, ptsd, abuso, violencia, abandono, negligencia</td></tr>
+        <tr><td>infantil</td><td>crianca, infantil, filho, adolescente, escola, bullying</td></tr>
+        <tr><td>comportamento</td><td>comportamento, tcc, habito, compulsao, vicio, dependencia, jogo, jogatina, tabagismo, alcoolismo</td></tr>
+        <tr><td>psicanalitica</td><td>psicanalise, psicanalitica, inconsciente, sonho, infancia</td></tr>
+        <tr><td>humanista</td><td>humanista, gestalt, humanismo, autoestima, autoconhecimento, identidade, proposito</td></tr>
+        <tr><td>cognitiva</td><td>cognitiva, pensamento, crencas, distorcao</td></tr>
+        <tr><td>estresse</td><td>estresse, burnout, esgotamento, sobrecarga, insonia</td></tr>
+        <tr><td>luto</td><td>luto, perda, morte, falecimento</td></tr>
+        <tr><td>alimentar</td><td>alimentar, anorexia, bulimia, obesidade, peso, emagrecimento</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 5. Distribuicao -->
+  <div class="section" id="distribution">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <h2>Distribuicao Proporcional (Limite Diario)</h2>
+    </div>
+    <p class="section-desc">Formula: <code style="background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:13px;">limite_diario = max(1, ceil(saldo / 20))</code> — garante entrega em ~20 dias uteis.</p>
+    <div class="chart-container">
+      <div class="mermaid">
+flowchart TD
+    S["Saldo atual\ndo terapeuta"] --> F["limite = max 1, ceil saldo / 20"]
+
+    F --> P1["Light 3\n1/dia\n3 dias"]
+    F --> P2["Regular 10\n1/dia\n10 dias"]
+    F --> P3["Mais 15\n1/dia\n15 dias"]
+    F --> P4["Maximo 20\n1/dia\n20 dias"]
+    F --> P5["30 Contatos\n2/dia\n15 dias"]
+    F --> P6["60 Contatos\n3/dia\n20 dias"]
+
+    P1 --> C{"Ja recebeu\nhoje >= limite?"}
+    P2 --> C
+    P3 --> C
+    P4 --> C
+    P5 --> C
+    P6 --> C
+
+    C -- "Sim" --> X["Pular terapeuta\nja atingiu limite"]
+    C -- "Nao" --> OK["Terapeuta disponivel\npara receber paciente"]
+
+    classDef calc fill:#fdf3d5,stroke:#b7791f,color:#1a202c,stroke-width:1.5px
+    classDef pacote fill:#e8f4fd,stroke:#2b6cb0,color:#1a202c,stroke-width:1px
+    classDef check fill:#dceefe,stroke:#2b6cb0,color:#1a202c,stroke-width:1.5px
+    classDef ok fill:#d6f5e3,stroke:#2f855a,color:#1a202c,stroke-width:2px
+    classDef skip fill:#fde2e2,stroke:#c53030,color:#1a202c,stroke-width:1.5px
+
+    class S,F calc
+    class P1,P2,P3,P4,P5,P6 pacote
+    class C check
+    class OK ok
+    class X skip
+      </div>
+    </div>
+
+    <table class="info-table" style="margin-top: 20px;">
+      <thead>
+        <tr><th>Pacote</th><th>Leads</th><th>Preco</th><th>Leads/dia</th><th>Entrega em</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Acolher Light</td><td>3</td><td>R$ 97</td><td>1</td><td>3 dias</td></tr>
+        <tr><td>Acolher Regular</td><td>10</td><td>R$ 250</td><td>1</td><td>10 dias</td></tr>
+        <tr><td>Acolher Mais</td><td>15</td><td>R$ 350</td><td>1</td><td>15 dias</td></tr>
+        <tr><td>Acolher Maximo</td><td>20</td><td>R$ 410</td><td>1</td><td>20 dias</td></tr>
+        <tr><td>30 Contatos</td><td>30</td><td>R$ 600</td><td>2</td><td>15 dias</td></tr>
+        <tr><td>60 Contatos</td><td>60</td><td>R$ 1.170</td><td>3</td><td>20 dias</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 6. Vias de Entrada -->
+  <div class="section" id="entries">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <h2>Vias de Entrada e Reprocessamento</h2>
+    </div>
+    <p class="section-desc">O matching dispara automaticamente por multiplas vias. Pacientes sem match sao reprocessados quando novos terapeutas ficam disponiveis.</p>
+    <div class="chart-container">
+      <div class="mermaid">
+flowchart TD
+    subgraph Entrada["Vias de Entrada de Pacientes"]
+        W1["ManyChat\nWebhook"]
+        W2["Admin\nCadastro Rapido"]
+        W3["API\nPOST /api/patients"]
+    end
+
+    W1 --> RM["runAutoMatching id"]
+    W2 --> RM
+    W3 --> RM
+
+    subgraph Reprocessamento["Reprocessamento de Pendentes"]
+        T1["Terapeuta\naprovado"]
+        T2["Kiwify\nsaldo creditado"]
+        T3["Cadastro com\nKiwify vinculado"]
+    end
+
+    T1 --> MP["matchPendingPatients"]
+    T2 --> MP
+    T3 --> MP
+
+    MP --> Q["Busca pacientes\nstatus = pendente\nlimite: 50"]
+    Q --> RM2["runAutoMatching id\npara cada pendente"]
+
+    RM --> ALGO["Algoritmo\nde Matching v2.0"]
+    RM2 --> ALGO
+
+    ALGO --> R1["Match encontrado\nAtribuicao criada"]
+    ALGO --> R2["Sem match\nPaciente continua pendente"]
+
+    R2 -.-> MP
+
+    classDef entrada fill:#dff3e4,stroke:#2f855a,color:#1a202c,stroke-width:1.5px
+    classDef reproc fill:#e8daef,stroke:#6c3483,color:#1a202c,stroke-width:1.5px
+    classDef func fill:#fdf3d5,stroke:#b7791f,color:#1a202c,stroke-width:1.5px
+    classDef algo fill:#dceefe,stroke:#2b6cb0,color:#1a202c,stroke-width:2px
+    classDef ok fill:#d6f5e3,stroke:#2f855a,color:#1a202c,stroke-width:2px
+    classDef falha fill:#fde2e2,stroke:#c53030,color:#1a202c,stroke-width:1.5px
+
+    class W1,W2,W3 entrada
+    class T1,T2,T3 reproc
+    class RM,RM2,MP,Q func
+    class ALGO algo
+    class R1 ok
+    class R2 falha
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 7. Falhas -->
+  <div class="section" id="failures">
+    <div class="section-header">
+      <div class="section-number">7</div>
+      <h2>Pontos de Falha e Recuperacao</h2>
+    </div>
+    <table class="info-table">
+      <thead>
+        <tr><th>Passo</th><th>Motivo</th><th>Impacto</th><th>Recuperacao</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-blue">2</span></td>
+          <td>Paciente nao elegivel (sem motivo / WhatsApp)</td>
+          <td>Matching nem comeca</td>
+          <td>Admin corrige dados do paciente</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">3</span></td>
+          <td>0 terapeutas passam nos filtros</td>
+          <td>Paciente pendente</td>
+          <td>Espera novo terapeuta ou admin flexibiliza criterios</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">4</span></td>
+          <td>Todos os candidatos no limite diario</td>
+          <td>Paciente pendente temporariamente</td>
+          <td>Automatico: reprocessa no dia seguinte</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">6</span></td>
+          <td>Ninguem atinge 65% de score</td>
+          <td>Paciente pendente</td>
+          <td>Admin faz matching manual pelo dashboard</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">12</span></td>
+          <td>Notificacao falha (ManyChat / Telegram)</td>
+          <td>Atribuicao criada, porem nao notificada</td>
+          <td>Admin notifica manualmente, campo notified = false</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">9</span></td>
+          <td>Race condition no saldo</td>
+          <td>Nenhum — GREATEST(0, saldo-1) impede negativo</td>
+          <td>Protecao automatica via SQL</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 8. Resumo -->
+  <div class="section" id="summary">
+    <div class="section-header">
+      <div class="section-number">8</div>
+      <h2>Resumo — Principios Chave</h2>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <strong>Filtros primeiro, score depois</strong>
+        <span>O matching nao comeca pela IA — primeiro elimina terapeutas por regras obrigatorias bidirecionais. Isso reduz o pool antes de calcular score.</span>
+      </div>
+      <div class="summary-card">
+        <strong>Genero bidirecional</strong>
+        <span>Verifica preferencia do paciente E do terapeuta. Se o terapeuta so atende mulheres, nao recebe paciente homem — mesmo que o paciente nao tenha preferencia.</span>
+      </div>
+      <div class="summary-card">
+        <strong>Distribuicao proporcional</strong>
+        <span>Limite diario = ceil(saldo/20). Pacotes grandes recebem mais por dia, pacotes pequenos sao entregues mais rapido. Todos em ~20 dias uteis.</span>
+      </div>
+      <div class="summary-card">
+        <strong>Cascata 85 → 75 → 65</strong>
+        <span>Tenta o melhor match primeiro. Se nao encontra excelente, aceita bom. Se nao encontra bom, aceita aceitavel. Se ninguem passa em 65%, vai para admin.</span>
+      </div>
+      <div class="summary-card">
+        <strong>Distribuicao justa</strong>
+        <span>Dentro do nivel da cascata, prioriza quem nao recebeu paciente ha mais tempo. Evita concentrar leads em poucos terapeutas.</span>
+      </div>
+      <div class="summary-card">
+        <strong>Reprocessamento automatico</strong>
+        <span>Pacientes pendentes sao reprocessados quando novos terapeutas sao aprovados ou recebem saldo via Kiwify. Ninguem fica esquecido.</span>
+      </div>
+      <div class="summary-card">
+        <strong>Notificacao bilateral</strong>
+        <span>Tanto paciente (ManyChat/WhatsApp) quanto terapeuta (Telegram) sao notificados. Notificacoes sao assincronas — nao bloqueiam a atribuicao.</span>
+      </div>
+      <div class="summary-card">
+        <strong>Saldo protegido</strong>
+        <span>GREATEST(0, saldo - 1) garante que o saldo nunca fica negativo, mesmo em situacoes de concorrencia.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Diferencas v1 vs v2 -->
+  <div class="divider"></div>
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">+</div>
+      <h2>Diferencas v1.0 → v2.0</h2>
+    </div>
+    <table class="info-table">
+      <thead>
+        <tr><th>Aspecto</th><th>v1.0</th><th>v2.0</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Elegibilidade</td><td><span class="tag tag-red">Nao verificava</span></td><td><span class="tag tag-green">Status + motivo + WhatsApp</span></td></tr>
+        <tr><td>Genero</td><td><span class="tag tag-yellow">Unidirecional</span></td><td><span class="tag tag-green">Bidirecional</span></td></tr>
+        <tr><td>Score base</td><td>30 pts</td><td>50 pts</td></tr>
+        <tr><td>Score metodo</td><td>Abordagem + especialidades</td><td>12 categorias de keywords</td></tr>
+        <tr><td>Threshold</td><td><span class="tag tag-yellow">Corte unico 70%</span></td><td><span class="tag tag-green">Cascata 85→75→65</span></td></tr>
+        <tr><td>Distribuicao</td><td><span class="tag tag-green">Proporcional</span></td><td><span class="tag tag-green">Proporcional (mantido)</span></td></tr>
+        <tr><td>Casal/Infantil</td><td><span class="tag tag-green">Sim</span></td><td><span class="tag tag-green">Sim (mantido)</span></td></tr>
+        <tr><td>Saldo negativo</td><td><span class="tag tag-red">Possivel</span></td><td><span class="tag tag-green">Impossivel</span></td></tr>
+        <tr><td>Notificacao</td><td><span class="tag tag-blue">Ambos via ManyChat</span></td><td><span class="tag tag-purple">Paciente: ManyChat / Terapeuta: Telegram</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="footer">
+  Terapia Acolher — Matching v2.0 — Documento gerado em marco/2026
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#2b6cb0',
+      primaryTextColor: '#1a202c',
+      primaryBorderColor: '#2b6cb0',
+      lineColor: '#4a5568',
+      secondaryColor: '#fdf3d5',
+      tertiaryColor: '#dceefe',
+      fontSize: '13px',
+    },
+    flowchart: {
+      useMaxWidth: true,
+      htmlLabels: true,
+      curve: 'basis',
+      padding: 16,
+    },
+  });
+</script>
+
+</body>
+</html>
