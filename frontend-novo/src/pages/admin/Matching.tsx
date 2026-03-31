@@ -19,6 +19,8 @@ const shiftLabel: Record<string, string> = { manha: 'Manhã', tarde: 'Tarde', no
 export function AdminMatching() {
   const [mode, setMode] = useState<MatchMode>('auto')
   const [weights, setWeights] = useState({ genero: 90, turno: 85, abordagem: 70 })
+  const [savingWeights, setSavingWeights] = useState(false)
+  const [weightsSaved, setWeightsSaved] = useState(false)
   const [expandedLog, setExpandedLog] = useState<number | null>(null)
   const [showWeights, setShowWeights] = useState(false)
   const [unassignedPatients, setUnassignedPatients] = useState<Patient[]>([])
@@ -35,11 +37,16 @@ export function AdminMatching() {
     async function load() {
       try {
         const [modeRes, patients, log] = await Promise.all([
-          api.matching.getMode().catch(() => ({ mode: 'auto' })),
+          api.matching.getMode().catch(() => ({ mode: 'auto', weight_gender: 90, weight_shift: 85, weight_specialty: 70 })),
           api.patients.list({ status: 'pendente' }).catch(() => []),
           api.matching.log().catch(() => []),
         ])
         setMode(modeRes.mode || 'auto')
+        setWeights({
+          genero: modeRes.weight_gender ?? 90,
+          turno: modeRes.weight_shift ?? 85,
+          abordagem: modeRes.weight_specialty ?? 70,
+        })
         setUnassignedPatients(patients.filter((p: Patient) => !p.assigned_therapist_id))
         setMatchingLog(log)
       } catch (err) {
@@ -119,7 +126,7 @@ export function AdminMatching() {
     <div className="space-y-5 w-full">
       <div>
         <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Controle</p>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Motor de Matching</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-100 tracking-tight">Motor de Matching</h1>
       </div>
 
       <Card>
@@ -336,9 +343,33 @@ export function AdminMatching() {
                   className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-orange-500" />
               </div>
             ))}
-            <button className="w-full py-2 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-lg text-sm font-medium hover:bg-orange-500/20 transition-colors">
-              Salvar pesos
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={async () => {
+                  setSavingWeights(true)
+                  setWeightsSaved(false)
+                  try {
+                    await api.matching.setMode(mode, {
+                      weight_gender: weights.genero,
+                      weight_shift: weights.turno,
+                      weight_specialty: weights.abordagem,
+                    })
+                    setWeightsSaved(true)
+                    setTimeout(() => setWeightsSaved(false), 3000)
+                  } catch (err) {
+                    console.error(err)
+                  } finally {
+                    setSavingWeights(false)
+                  }
+                }}
+                disabled={savingWeights}
+                className="flex-1 py-2 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-lg text-sm font-medium hover:bg-orange-500/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {savingWeights && <span className="w-3.5 h-3.5 rounded-full border-2 border-orange-400/30 border-t-orange-400 animate-spin" />}
+                Salvar pesos
+              </button>
+              {weightsSaved && <span className="text-xs text-green-400">Salvo ✓</span>}
+            </div>
           </div>
         )}
       </Card>

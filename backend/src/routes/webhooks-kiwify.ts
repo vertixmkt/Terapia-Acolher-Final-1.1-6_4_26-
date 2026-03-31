@@ -1,9 +1,11 @@
 import { Router } from 'express'
+import { timingSafeEqual } from 'crypto'
 import { getDb } from '../db/index.js'
 import { webhooksKiwify, therapists } from '../db/schema.js'
-import { eq, or, and, desc } from 'drizzle-orm'
+import { eq, or, desc } from 'drizzle-orm'
 import { adminAuth } from '../middleware/auth.js'
 import { matchPendingPatients } from '../services/matching.js'
+import { logger } from '../lib/logger.js'
 
 export const webhooksKiwifyRouter = Router()
 
@@ -53,8 +55,42 @@ function detectLeadsQty(offerName: string, productName: string): number {
   return 3 // padrão mínimo
 }
 
+// ─── Verificação de token Kiwify ──────────────────────────────────────────────
+// Kiwify envia o token configurado no painel como query param ?token=xxx
+// Se KIWIFY_WEBHOOK_TOKEN estiver configurado, verificamos com timing-safe
+
+function verifyKiwifyToken(req: import('express').Request): boolean {
+  const configuredToken = process.env.KIWIFY_WEBHOOK_TOKEN
+  if (!configuredToken) return true // Token não configurado → aceitar (alertar via log)
+
+  const incomingToken = (req.query.token as string) || (req.body?.token as string)
+
+  if (!incomingToken) return false
+
+  try {
+    const a = Buffer.from(incomingToken)
+    const b = Buffer.from(configuredToken)
+    if (a.length !== b.length) return false
+    return timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
+}
+
 // POST /api/webhooks/kiwify — receber compra (P1 + P6)
 webhooksKiwifyRouter.post('/', async (req, res) => {
+  // Verificar token Kiwify
+  if (!verifyKiwifyToken(req)) {
+    logger.warn({ ip: req.ip, requestId: req.requestId }, 'Webhook Kiwify: token inválido')
+    res.status(401).json({ error: 'Token inválido' })
+    return
+  }
+
+  // Alertar se token não configurado (produção deve sempre ter)
+  if (!process.env.KIWIFY_WEBHOOK_TOKEN) {
+    logger.warn('KIWIFY_WEBHOOK_TOKEN não configurado — webhooks aceitando sem verificação')
+  }
+
   try {
     const db = await getDb()
     const body = req.body
@@ -101,7 +137,7 @@ webhooksKiwifyRouter.post('/', async (req, res) => {
       return
     }
 
-    // Buscar terapeuta cadastrado pelo email ou telefone
+    // Buscar terapeuta pelo email ou telefone
     const conditions = []
     if (customer_email) conditions.push(eq(therapists.email, customer_email))
     if (customer_phone) conditions.push(eq(therapists.whatsapp, customer_phone))
@@ -115,7 +151,6 @@ webhooksKiwifyRouter.post('/', async (req, res) => {
     let therapist_id: number | undefined
 
     if (therapist) {
-      // Terapeuta existe → creditar leads imediatamente
       await db
         .update(therapists)
         .set({ balance: (therapist.balance ?? 0) + leads_qty })
@@ -124,15 +159,12 @@ webhooksKiwifyRouter.post('/', async (req, res) => {
       processing_status = 'processed'
       therapist_id = therapist.id
 
-      // Terapeuta recebeu saldo → tentar atribuir pacientes pendentes
       matchPendingPatients().catch(err =>
-        console.error('[Webhook/Kiwify] Erro no matching automático:', err)
+        logger.error({ error: err }, '[Webhook/Kiwify] Erro no matching automático')
       )
     }
-    // Se não existe → fica pendente, será processado no cadastro (P1)
 
-    // Salvar no log (P6)
-    const wh = await db.insert(webhooksKiwify).values({
+    await db.insert(webhooksKiwify).values({
       order_id,
       order_ref,
       customer_name,
@@ -148,15 +180,10 @@ webhooksKiwifyRouter.post('/', async (req, res) => {
       raw_payload: body,
     })
 
-    res.json({
-      success: true,
-      order_id,
-      leads_qty,
-      therapist_found: !!therapist,
-      processing_status,
-    })
+    logger.info({ order_id, leads_qty, therapist_found: !!therapist }, '[Webhook/Kiwify] Processado')
+    res.json({ success: true, order_id, leads_qty, therapist_found: !!therapist, processing_status })
   } catch (error) {
-    console.error('[Webhook/Kiwify] Erro:', error)
+    logger.error({ error, requestId: req.requestId }, '[Webhook/Kiwify] Erro')
     res.status(500).json({ error: 'Erro ao processar webhook' })
   }
 })
@@ -171,7 +198,7 @@ webhooksKiwifyRouter.get('/', adminAuth, async (req, res) => {
       .select()
       .from(webhooksKiwify)
       .orderBy(desc(webhooksKiwify.created_at))
-      .limit(parseInt(limit))
+      .limit(Math.min(parseInt(limit), 500))
       .$dynamic()
 
     if (status) {
@@ -181,8 +208,7 @@ webhooksKiwifyRouter.get('/', adminAuth, async (req, res) => {
     const rows = await query
     res.json(rows)
   } catch (error) {
-    console.error('[Webhook/Kiwify/List] Erro:', error)
+    logger.error({ error }, '[Webhook/Kiwify/List] Erro')
     res.status(500).json({ error: 'Erro ao listar webhooks Kiwify' })
   }
 })
-

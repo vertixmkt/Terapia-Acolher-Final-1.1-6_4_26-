@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, UserCheck, Wallet, X, Edit2, Check, Phone, MessageCircle, ShieldCheck, Loader2 } from 'lucide-react'
+import { Search, UserCheck, Wallet, X, Edit2, Check, Phone, MessageCircle, ShieldCheck, Loader2, GraduationCap } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
 import { api } from '../../api/client'
@@ -30,6 +30,7 @@ function TherapistModal({
     phone: therapist.phone,
     approach: therapist.approach,
     specialties: (therapist.specialties || []).join(', '),
+    has_formation: therapist.has_formation ?? false,
   })
 
   const isPending = therapist.status === 'pendente'
@@ -40,6 +41,7 @@ function TherapistModal({
       await api.therapists.update(therapist.id, {
         ...form,
         specialties: form.specialties.split(',').map(s => s.trim()).filter(Boolean),
+        has_formation: form.has_formation,
       })
       onRefresh()
       onClose()
@@ -109,6 +111,23 @@ function TherapistModal({
               <input value={form.specialties} onChange={e => setForm(f => ({ ...f, specialties: e.target.value }))}
                 className="w-full px-3 py-2 bg-white/[0.04] border border-white/10 rounded-lg text-sm text-gray-200 outline-none focus:border-orange-500/40" />
             </div>
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-lg">
+            <div className="flex items-center gap-2">
+              <GraduationCap size={14} className={form.has_formation ? 'text-orange-400' : 'text-gray-600'} />
+              <div>
+                <p className="text-sm text-gray-200">Formação Rodrigo</p>
+                <p className="text-xs text-gray-600 mt-0.5">Terapeuta tem prioridade no matching quando scores são iguais</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm(f => ({ ...f, has_formation: !f.has_formation }))}
+              className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${form.has_formation ? 'bg-orange-500' : 'bg-white/10'}`}
+            >
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.has_formation ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-xs">
@@ -216,7 +235,7 @@ export function AdminTherapists() {
     <div className="space-y-4 w-full">
       <div>
         <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Gerenciar</p>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Terapeutas</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-100 tracking-tight">Terapeutas</h1>
       </div>
 
       {pendingCount > 0 && (
@@ -302,7 +321,14 @@ export function AdminTherapists() {
                     <Badge variant={statusBadge[t.status].variant}>{statusBadge[t.status].label}</Badge>
                   </td>
                   <td className="px-5 py-3.5 hidden md:table-cell">
-                    {t.manychat_subscriber_id ? <Badge variant="blue">Vinculado</Badge> : <Badge variant="red">Sem ID</Badge>}
+                    <div className="flex items-center gap-1.5">
+                      {t.manychat_subscriber_id ? <Badge variant="blue">Vinculado</Badge> : <Badge variant="red">Sem ID</Badge>}
+                      {t.has_formation && (
+                        <span title="Formação Rodrigo" className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-orange-500/10 border border-orange-500/20 rounded-md text-xs text-orange-400">
+                          <GraduationCap size={10} /> Form.
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3.5" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
@@ -323,7 +349,16 @@ export function AdminTherapists() {
           {filtered.length === 0 && (
             <div className="py-12 text-center text-gray-600">
               <UserCheck size={32} className="mx-auto mb-2 opacity-30" />
-              <p>Nenhum terapeuta encontrado</p>
+              {search || filterStatus !== 'todos' || filterAudience !== 'todos' ? (
+                <>
+                  <p className="text-sm">Nenhum resultado para esse filtro</p>
+                  <button onClick={() => { setSearch(''); setFilterStatus('todos'); setFilterAudience('todos') }} className="text-xs text-gray-500 hover:text-orange-400 mt-1 underline transition-colors">
+                    Limpar filtros
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm">Nenhum terapeuta cadastrado ainda</p>
+              )}
             </div>
           )}
         </div>

@@ -14,14 +14,20 @@ export function TherapistProfile() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [togglingStatus, setTogglingStatus] = useState(false)
-  const [form, setForm] = useState({ name: '', phone: '', email: '', approach: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', approach: '', specialties: '' })
 
   useEffect(() => {
     async function load() {
       try {
         const data = await api.therapistPortal.getProfile()
         setTherapist(data)
-        setForm({ name: data.name, phone: data.phone || '', email: data.email || '', approach: data.approach })
+        setForm({
+          name: data.name,
+          phone: data.phone || '',
+          email: data.email || '',
+          approach: data.approach || '',
+          specialties: (data.specialties || []).join(', '),
+        })
       } catch (err) {
         console.error('Load error:', err)
       } finally {
@@ -34,7 +40,10 @@ export function TherapistProfile() {
   async function handleSave() {
     setSaving(true)
     try {
-      await api.therapistPortal.updateProfile(form)
+      await api.therapistPortal.updateProfile({
+        ...form,
+        specialties: form.specialties.split(',').map(s => s.trim()).filter(Boolean),
+      })
       const data = await api.therapistPortal.getProfile()
       setTherapist(data)
       setEditing(false)
@@ -58,7 +67,7 @@ export function TherapistProfile() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Portal do Terapeuta</p>
-          <h1 className="text-2xl font-bold text-gray-100">Meu Perfil</h1>
+          <h1 className="text-2xl font-bold text-gray-100 tracking-tight">Meu Perfil</h1>
         </div>
         <button onClick={() => setEditing(!editing)}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -143,6 +152,19 @@ export function TherapistProfile() {
                   <label className="text-xs text-gray-500 block mb-1.5">E-mail</label>
                   <input value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
                     className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-gray-300 outline-none focus:border-orange-500/40" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1.5">Abordagem terapêutica</label>
+                  <input value={form.approach} onChange={(e) => setForm(f => ({ ...f, approach: e.target.value }))}
+                    placeholder="Ex: Terapia Cognitivo-Comportamental"
+                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-gray-300 outline-none focus:border-orange-500/40" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1.5">Especialidades</label>
+                  <input value={form.specialties} onChange={(e) => setForm(f => ({ ...f, specialties: e.target.value }))}
+                    placeholder="Ex: ansiedade, depressão, trauma (separadas por vírgula)"
+                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-gray-300 outline-none focus:border-orange-500/40" />
+                  <p className="text-xs text-gray-600 mt-1">Separe as especialidades por vírgula</p>
                 </div>
                 <button onClick={handleSave} disabled={saving}
                   className="w-full py-2.5 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2">

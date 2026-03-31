@@ -4,18 +4,22 @@
  * POST /api/webhooks/manychat/patient  — recebe dados do paciente via external request
  * GET  /api/webhooks/manychat/received — lista todos os webhooks recebidos (P4)
  * GET  /api/webhooks/manychat/sent     — lista todos os webhooks enviados (P5)
+ * POST /api/webhooks/manychat/sent/:id/retry — reenvia notificação com erro (P5)
  */
 
 import { Router } from 'express'
 import { getDb } from '../db/index.js'
 import {
   webhooksManychatReceived, webhooksManychatSent,
-  patients, manychatSubscribers,
+  patients, therapists, assignments, manychatSubscribers,
 } from '../db/schema.js'
 import { eq, desc } from 'drizzle-orm'
 import { adminAuth } from '../middleware/auth.js'
 import { runAutoMatching } from '../services/matching.js'
-import { upsertSubscriber } from '../services/manychat.js'
+import {
+  upsertSubscriber, notifyTherapist, notifyPatient, resolveSubscriberId,
+} from '../services/manychat.js'
+import { logger } from '../lib/logger.js'
 
 export const webhooksManychatRouter = Router()
 
@@ -28,7 +32,6 @@ webhooksManychatRouter.post('/patient', async (req, res) => {
   try {
     const body = req.body
 
-    // Normalizar todos os campos que o ManyChat pode enviar
     const name         = cleanField(body.nome || body.name || body.full_name)
     const phone        = cleanPhone(body.whatsapp || body.phone || body.celular)
     const subscriberId = cleanField(body.subscriber_id || body.manychat_id || body.id)
@@ -43,7 +46,6 @@ webhooksManychatRouter.post('/patient', async (req, res) => {
     const relativeName = cleanField(body.nome_parente || body.relative_name)
     const relativePhone = cleanPhone(body.contato_parente || body.relative_phone)
 
-    // Validar campos obrigatórios (e rejeitar placeholders do ManyChat como {{nome}})
     if (!name || isPlaceholder(name)) {
       res.status(400).json({ error: 'Campo nome ausente ou inválido' })
       return
@@ -101,23 +103,19 @@ webhooksManychatRouter.post('/patient', async (req, res) => {
 
     // 5. Disparar matching automático (não bloqueia a resposta)
     runAutoMatching(patientId).catch(err =>
-      console.error('[Webhook/ManyChat] Erro no matching automático:', err)
+      logger.error({ error: err }, '[Webhook/ManyChat] Erro no matching automático')
     )
 
-    console.log(`[Webhook/ManyChat] ✅ Paciente ${patientId} criado — ${name} (${phone})`)
+    logger.info({ patientId, name, phone }, '[Webhook/ManyChat] Paciente criado')
     res.json({ success: true, patient_id: patientId })
 
   } catch (error) {
-    console.error('[Webhook/ManyChat/Patient] Erro:', error)
+    logger.error({ error, requestId: req.requestId }, '[Webhook/ManyChat/Patient] Erro')
     if (webhookId) {
       const db2 = await getDb()
       await db2
         .update(webhooksManychatReceived)
-        .set({
-          processing_status: 'error',
-          error_message: String(error),
-          processed_at: new Date(),
-        })
+        .set({ processing_status: 'error', error_message: String(error), processed_at: new Date() })
         .where(eq(webhooksManychatReceived.id, webhookId))
         .catch(() => {})
     }
@@ -125,12 +123,12 @@ webhooksManychatRouter.post('/patient', async (req, res) => {
   }
 })
 
-// ─── GET /received — listar webhooks recebidos (P4) ──────────────────────────
+// ─── GET /received (P4) ───────────────────────────────────────────────────────
 
 webhooksManychatRouter.get('/received', adminAuth, async (req, res) => {
   try {
     const db = await getDb()
-    const { limit = '100', status, type } = req.query as Record<string, string>
+    const { limit = '100', status } = req.query as Record<string, string>
 
     let query = db
       .select()
@@ -143,14 +141,13 @@ webhooksManychatRouter.get('/received', adminAuth, async (req, res) => {
       query = query.where(eq(webhooksManychatReceived.processing_status, status as any))
     }
 
-    const rows = await query
-    res.json(rows)
+    res.json(await query)
   } catch (error) {
     res.status(500).json({ error: 'Erro ao listar webhooks recebidos' })
   }
 })
 
-// ─── GET /sent — listar webhooks enviados (P5) ───────────────────────────────
+// ─── GET /sent (P5) ──────────────────────────────────────────────────────────
 
 webhooksManychatRouter.get('/sent', adminAuth, async (req, res) => {
   try {
@@ -164,29 +161,30 @@ webhooksManychatRouter.get('/sent', adminAuth, async (req, res) => {
       .limit(Math.min(parseInt(limit), 500))
       .$dynamic()
 
-    if (type) {
-      query = query.where(eq(webhooksManychatSent.type, type as any))
-    }
-    if (status) {
-      query = query.where(eq(webhooksManychatSent.status, status as any))
-    }
+    if (type) query = query.where(eq(webhooksManychatSent.type, type as any))
+    if (status) query = query.where(eq(webhooksManychatSent.status, status as any))
 
-    const rows = await query
-    res.json(rows)
+    res.json(await query)
   } catch (error) {
     res.status(500).json({ error: 'Erro ao listar webhooks enviados' })
   }
 })
 
-// ─── POST /sent/:id/retry — reenviar notificação com erro ────────────────────
+// ─── POST /sent/:id/retry — reenviar notificação com erro (P5) ───────────────
 
 webhooksManychatRouter.post('/sent/:id/retry', adminAuth, async (req, res) => {
   try {
     const db = await getDb()
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'ID inválido' })
+      return
+    }
+
     const [entry] = await db
       .select()
       .from(webhooksManychatSent)
-      .where(eq(webhooksManychatSent.id, parseInt(req.params.id)))
+      .where(eq(webhooksManychatSent.id, id))
 
     if (!entry) {
       res.status(404).json({ error: 'Registro não encontrado' })
@@ -198,10 +196,99 @@ webhooksManychatRouter.post('/sent/:id/retry', adminAuth, async (req, res) => {
       return
     }
 
-    // TODO: implementar retry específico por tipo de envio
-    res.json({ message: 'Re-envio enfileirado', id: entry.id })
+    // Reenviar baseado no tipo
+    if (entry.type === 'notify_therapist' && entry.therapist_id && entry.assignment_id) {
+      const [therapist] = await db.select().from(therapists).where(eq(therapists.id, entry.therapist_id))
+      const assignment = await db
+        .select({ patient_id: assignments.patient_id })
+        .from(assignments)
+        .where(eq(assignments.id, entry.assignment_id))
+        .limit(1)
+
+      if (!therapist || !assignment[0]) {
+        res.status(404).json({ error: 'Dados do terapeuta ou atribuição não encontrados' })
+        return
+      }
+
+      const [patient] = await db.select().from(patients).where(eq(patients.id, assignment[0].patient_id))
+      if (!patient) {
+        res.status(404).json({ error: 'Paciente não encontrado' })
+        return
+      }
+
+      const therapistSubId = await resolveSubscriberId(
+        therapist.manychat_subscriber_id,
+        therapist.whatsapp,
+      )
+
+      if (!therapistSubId) {
+        res.status(400).json({ error: 'Subscriber ID do terapeuta não encontrado' })
+        return
+      }
+
+      await notifyTherapist({
+        therapistSubscriberId: therapistSubId,
+        therapistId: therapist.id,
+        patientId: patient.id,
+        assignmentId: entry.assignment_id,
+        patientName: patient.name,
+        patientWhatsapp: patient.phone || '',
+        patientShift: patient.shift || '',
+        patientReason: patient.reason || '',
+      })
+
+      logger.info({ id, type: entry.type }, '[ManyChat/Retry] Notificação reenviada')
+      res.json({ success: true, message: 'Notificação ao terapeuta reenviada' })
+      return
+    }
+
+    if (entry.type === 'notify_patient' && entry.patient_id && entry.assignment_id) {
+      const [patient] = await db.select().from(patients).where(eq(patients.id, entry.patient_id))
+      const assignment = await db
+        .select({ therapist_id: assignments.therapist_id })
+        .from(assignments)
+        .where(eq(assignments.id, entry.assignment_id))
+        .limit(1)
+
+      if (!patient || !assignment[0]) {
+        res.status(404).json({ error: 'Dados do paciente ou atribuição não encontrados' })
+        return
+      }
+
+      const [therapist] = await db.select().from(therapists).where(eq(therapists.id, assignment[0].therapist_id))
+      if (!therapist) {
+        res.status(404).json({ error: 'Terapeuta não encontrado' })
+        return
+      }
+
+      const patientSubId = await resolveSubscriberId(
+        patient.manychat_subscriber_id,
+        patient.phone,
+      )
+
+      if (!patientSubId) {
+        res.status(400).json({ error: 'Subscriber ID do paciente não encontrado' })
+        return
+      }
+
+      await notifyPatient({
+        patientSubscriberId: patientSubId,
+        patientId: patient.id,
+        therapistId: therapist.id,
+        assignmentId: entry.assignment_id,
+        therapistName: therapist.name,
+        therapistWhatsapp: therapist.whatsapp || '',
+      })
+
+      logger.info({ id, type: entry.type }, '[ManyChat/Retry] Notificação reenviada')
+      res.json({ success: true, message: 'Notificação ao paciente reenviada' })
+      return
+    }
+
+    res.status(400).json({ error: `Retry não suportado para tipo: ${entry.type}` })
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao reenviar' })
+    logger.error({ error }, '[ManyChat/Retry] Erro')
+    res.status(500).json({ error: 'Erro ao reenviar notificação' })
   }
 })
 
@@ -226,9 +313,7 @@ function normalizeGender(val: unknown): string {
   if (['m', 'masculino', 'homem', 'male', 'h'].includes(v)) return 'M'
   if (['f', 'feminino', 'mulher', 'female'].includes(v)) return 'F'
   if (['nb', 'nao-binario', 'não-binário', 'nonbinary', 'outro', 'other'].includes(v)) return 'NB'
-  // No sistema original: infantil/casal → paciente com therapy_for especial, gender separado
-  if (['infantil', 'criança'].includes(v)) return 'M' // padrão para infantil
-  return 'M' // padrão
+  return 'M'
 }
 
 function normalizePrefGender(val: unknown): string {
@@ -236,7 +321,6 @@ function normalizePrefGender(val: unknown): string {
   if (['m', 'masculino', 'homem', 'male', 'h'].includes(v)) return 'M'
   if (['f', 'feminino', 'mulher', 'female'].includes(v)) return 'F'
   if (['nb', 'nao-binario', 'não-binário'].includes(v)) return 'NB'
-  if (['tanto_faz', 'tanto faz', 'indifferent', 'indiferente', ''].includes(v)) return 'indifferent'
   return 'indifferent'
 }
 
@@ -246,7 +330,6 @@ function normalizeShift(val: unknown): string {
   if (['tarde', 'afternoon'].includes(v)) return 'tarde'
   if (['noite', 'night', 'evening'].includes(v)) return 'noite'
   if (['qualquer', 'any', 'flexivel', 'flexível'].includes(v)) return 'flexivel'
-  // Turnos múltiplos (ex: "manha,tarde") → pegar o primeiro
   if (v.includes(',')) return normalizeShift(v.split(',')[0])
   return 'flexivel'
 }

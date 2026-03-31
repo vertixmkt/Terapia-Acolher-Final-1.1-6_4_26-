@@ -3,6 +3,8 @@ import { NavLink, Outlet, useSearchParams } from 'react-router-dom'
 import { User, GitMerge, Wallet, Heart, LogOut, Loader2, Mail, Phone } from 'lucide-react'
 import { api } from '../../api/client'
 
+const THERAPIST_TOKEN_KEY = 'therapist_token'
+
 const nav = [
   { to: '/terapeuta', label: 'Meu Perfil', icon: User, end: true },
   { to: '/terapeuta/atribuicoes', label: 'Atribuições', icon: GitMerge },
@@ -21,7 +23,8 @@ function LoginScreen() {
     setError('')
     try {
       const res = await api.therapistPortal.login(credential.trim())
-      localStorage.setItem('therapist_token', res.token)
+      // sessionStorage: limpo ao fechar a aba/janela (mais seguro que localStorage)
+      sessionStorage.setItem(THERAPIST_TOKEN_KEY, res.token)
       window.location.reload()
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login')
@@ -88,16 +91,16 @@ export function TherapistLayout() {
 
   useEffect(() => {
     async function check() {
-      // 1. If token is in URL, save it and clean the URL
+      // 1. Se token vier na URL (link gerado pelo admin), salva em sessionStorage e limpa a URL
       const urlToken = searchParams.get('token')
       if (urlToken) {
-        localStorage.setItem('therapist_token', urlToken)
+        sessionStorage.setItem(THERAPIST_TOKEN_KEY, urlToken)
         searchParams.delete('token')
         setSearchParams(searchParams, { replace: true })
       }
 
-      // 2. Check if we have a valid token
-      const stored = localStorage.getItem('therapist_token')
+      // 2. Verificar token armazenado
+      const stored = sessionStorage.getItem(THERAPIST_TOKEN_KEY)
       if (!stored) {
         setChecking(false)
         return
@@ -108,7 +111,7 @@ export function TherapistLayout() {
         setTherapistName(profile.name || '')
         setAuthed(true)
       } catch {
-        localStorage.removeItem('therapist_token')
+        sessionStorage.removeItem(THERAPIST_TOKEN_KEY)
       } finally {
         setChecking(false)
       }
@@ -117,7 +120,7 @@ export function TherapistLayout() {
   }, [])
 
   function handleLogout() {
-    localStorage.removeItem('therapist_token')
+    sessionStorage.removeItem(THERAPIST_TOKEN_KEY)
     setAuthed(false)
     setTherapistName('')
   }
@@ -138,7 +141,6 @@ export function TherapistLayout() {
 
   return (
     <div className="min-h-screen" style={{ background: '#0B0C15' }}>
-      {/* Top nav */}
       <header className="border-b border-white/5" style={{ background: '#0d0e1a' }}>
         <div className="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -166,7 +168,6 @@ export function TherapistLayout() {
         </div>
       </header>
 
-      {/* Tab nav */}
       <div className="border-b border-white/5 sticky top-0 z-10" style={{ background: '#0d0e1a' }}>
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex">
@@ -191,7 +192,6 @@ export function TherapistLayout() {
         </div>
       </div>
 
-      {/* Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Outlet />
       </main>

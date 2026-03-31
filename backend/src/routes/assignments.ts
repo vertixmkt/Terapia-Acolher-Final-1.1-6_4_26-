@@ -1,18 +1,34 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import { getDb } from '../db/index.js'
 import { assignments, therapists, patients, leadReplenishments } from '../db/schema.js'
-import { eq, desc, and, sql } from 'drizzle-orm'
+import { eq, desc, sql } from 'drizzle-orm'
 import { adminAuth } from '../middleware/auth.js'
-import { z } from 'zod'
+import { logger } from '../lib/logger.js'
 
 export const assignmentsRouter = Router()
 assignmentsRouter.use(adminAuth)
 
-// GET /api/assignments — listar com dados de paciente e terapeuta
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const statusSchema = z.object({
+  status: z.enum(['pendente', 'confirmado', 'cancelado']),
+})
+
+const replenishSchema = z.object({
+  therapist_id: z.number().int().positive(),
+  assignment_id: z.number().int().positive(),
+  reason: z.string().optional(),
+  contacted_0h: z.boolean().default(false),
+  contacted_24h: z.boolean().default(false),
+  contacted_72h: z.boolean().default(false),
+  contacted_15d: z.boolean().default(false),
+})
+
+// GET /api/assignments
 assignmentsRouter.get('/', async (req, res) => {
   try {
     const db = await getDb()
-    const { status, therapist_id, patient_id } = req.query as Record<string, string>
 
     const rows = await db
       .select({
@@ -36,7 +52,7 @@ assignmentsRouter.get('/', async (req, res) => {
 
     res.json(rows)
   } catch (error) {
-    console.error('[Assignments/List] Erro:', error)
+    logger.error({ error }, '[Assignments/List] Erro')
     res.status(500).json({ error: 'Erro ao listar atribuições' })
   }
 })
@@ -44,11 +60,15 @@ assignmentsRouter.get('/', async (req, res) => {
 // GET /api/assignments/:id
 assignmentsRouter.get('/:id', async (req, res) => {
   try {
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
+
     const db = await getDb()
     const [row] = await db
       .select()
       .from(assignments)
-      .where(eq(assignments.id, parseInt(req.params.id)))
+      .where(eq(assignments.id, id))
+
     if (!row) {
       res.status(404).json({ error: 'Atribuição não encontrada' })
       return
@@ -59,15 +79,23 @@ assignmentsRouter.get('/:id', async (req, res) => {
   }
 })
 
-// PATCH /api/assignments/:id/status — atualizar status
+// PATCH /api/assignments/:id/status
 assignmentsRouter.patch('/:id/status', async (req, res) => {
   try {
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
+
+    const parsed = statusSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Status inválido', details: parsed.error.errors })
+      return
+    }
+
     const db = await getDb()
-    const { status } = req.body
     await db
       .update(assignments)
-      .set({ status })
-      .where(eq(assignments.id, parseInt(req.params.id)))
+      .set({ status: parsed.data.status })
+      .where(eq(assignments.id, id))
     res.json({ success: true })
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar status' })
@@ -76,27 +104,20 @@ assignmentsRouter.patch('/:id/status', async (req, res) => {
 
 // ─── P3: Lead Replenishment ────────────────────────────────────────────────────
 
-const replenishSchema = z.object({
-  therapist_id: z.number(),
-  assignment_id: z.number(),
-  reason: z.string().optional(),
-  contacted_0h: z.boolean().default(false),
-  contacted_24h: z.boolean().default(false),
-  contacted_72h: z.boolean().default(false),
-  contacted_15d: z.boolean().default(false),
-})
-
-// POST /api/assignments/replenishment — solicitar reposição de lead
+// POST /api/assignments/replenishment
 assignmentsRouter.post('/replenishment', async (req, res) => {
   try {
-    const data = replenishSchema.parse(req.body)
-    const db = await getDb()
+    const parsed = replenishSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
+      return
+    }
 
-    // Verificar limite de reposições do terapeuta
+    const db = await getDb()
     const [therapist] = await db
       .select()
       .from(therapists)
-      .where(eq(therapists.id, data.therapist_id))
+      .where(eq(therapists.id, parsed.data.therapist_id))
 
     if (!therapist) {
       res.status(404).json({ error: 'Terapeuta não encontrado' })
@@ -111,7 +132,7 @@ assignmentsRouter.post('/replenishment', async (req, res) => {
     }
 
     const result = await db.insert(leadReplenishments).values({
-      ...data,
+      ...parsed.data,
       status: 'pending',
     })
 
@@ -121,16 +142,12 @@ assignmentsRouter.post('/replenishment', async (req, res) => {
       remaining_replenishments: (therapist.replenishments_max ?? 3) - ((therapist.replenishments_used ?? 0) + 1),
     })
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: 'Dados inválidos', details: error.errors })
-      return
-    }
-    console.error('[Replenishment/Create] Erro:', error)
+    logger.error({ error }, '[Replenishment/Create] Erro')
     res.status(500).json({ error: 'Erro ao solicitar reposição' })
   }
 })
 
-// GET /api/assignments/replenishment — listar solicitações
+// GET /api/assignments/replenishment
 assignmentsRouter.get('/replenishment', async (req, res) => {
   try {
     const db = await getDb()
@@ -157,12 +174,13 @@ assignmentsRouter.get('/replenishment', async (req, res) => {
   }
 })
 
-// PATCH /api/assignments/replenishment/:id/approve — aprovar reposição
+// PATCH /api/assignments/replenishment/:id/approve
 assignmentsRouter.patch('/replenishment/:id/approve', async (req, res) => {
   try {
-    const db = await getDb()
     const id = parseInt(req.params.id)
+    if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
 
+    const db = await getDb()
     const [req_row] = await db
       .select()
       .from(leadReplenishments)
@@ -173,7 +191,6 @@ assignmentsRouter.patch('/replenishment/:id/approve', async (req, res) => {
       return
     }
 
-    // Aprovar e creditar 1 lead
     await db
       .update(leadReplenishments)
       .set({ status: 'approved', resolved_at: new Date() })
@@ -182,7 +199,7 @@ assignmentsRouter.patch('/replenishment/:id/approve', async (req, res) => {
     await db
       .update(therapists)
       .set({
-        balance: sql`${therapists.balance} + 1`,
+        balance: sql`GREATEST(0, ${therapists.balance} + 1)`,
         replenishments_used: sql`${therapists.replenishments_used} + 1`,
       })
       .where(eq(therapists.id, req_row.therapist_id))

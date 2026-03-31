@@ -1,26 +1,53 @@
 /**
  * Rota de configuração do ManyChat
- * API key, flow namespaces, IDs de tags e custom fields — tudo gerenciado via UI
  */
 
 import { Router } from 'express'
+import { z } from 'zod'
 import { getDb } from '../db/index.js'
 import { manychatConfig, manychatSubscribers } from '../db/schema.js'
 import { eq, desc } from 'drizzle-orm'
 import { adminAuth } from '../middleware/auth.js'
 import { getManychatConfig } from '../services/manychat.js'
+import { logger } from '../lib/logger.js'
 
 export const manychatConfigRouter = Router()
 manychatConfigRouter.use(adminAuth)
 
-// GET /api/manychat/config — obter configuração atual
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const configSchema = z.object({
+  api_key: z.string().optional(),
+  flow_ns_notify_therapist: z.string().optional(),
+  flow_ns_notify_patient: z.string().optional(),
+  tag_id_new_patient: z.number().int().positive().optional(),
+  tag_id_therapist_assigned: z.number().int().positive().optional(),
+  cf_id_patient_name: z.number().int().positive().optional(),
+  cf_id_patient_whatsapp: z.number().int().positive().optional(),
+  cf_id_patient_shift: z.number().int().positive().optional(),
+  cf_id_patient_reason: z.number().int().positive().optional(),
+  cf_id_patient_assigned: z.number().int().positive().optional(),
+  cf_id_therapist_name: z.number().int().positive().optional(),
+  cf_id_therapist_whatsapp: z.number().int().positive().optional(),
+  cf_id_therapist_assigned: z.number().int().positive().optional(),
+  active: z.boolean().optional(),
+})
+
+const subscriberSchema = z.object({
+  whatsapp: z.string().min(10),
+  subscriber_id: z.string().min(1),
+  name: z.string().optional(),
+  therapist_id: z.number().int().positive().optional(),
+  patient_id: z.number().int().positive().optional(),
+})
+
+// GET /api/manychat/config
 manychatConfigRouter.get('/config', async (_req, res) => {
   try {
     const db = await getDb()
     const [config] = await db.select().from(manychatConfig).limit(1)
 
     if (!config) {
-      // Retornar valores padrão se não existir configuração
       res.json({
         api_key: '',
         flow_ns_notify_therapist: 'content20260219182249_152653',
@@ -40,7 +67,6 @@ manychatConfigRouter.get('/config', async (_req, res) => {
       return
     }
 
-    // Ocultar API key completa na resposta (apenas mostrar se começa com os 4 primeiros chars)
     const safeConfig = {
       ...config,
       api_key: config.api_key ? `${config.api_key.slice(0, 6)}...` : '',
@@ -51,33 +77,42 @@ manychatConfigRouter.get('/config', async (_req, res) => {
   }
 })
 
-// PUT /api/manychat/config — salvar configuração
+// PUT /api/manychat/config
 manychatConfigRouter.put('/config', async (req, res) => {
   try {
+    const parsed = configSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
+      return
+    }
+
     const db = await getDb()
     const [existing] = await db.select().from(manychatConfig).limit(1)
+    const data = { ...parsed.data }
 
-    const data = req.body
+    // Não sobrescrever API key se vier vazia ou mascarada
+    if (!data.api_key || data.api_key.includes('...')) {
+      delete data.api_key
+    }
 
     if (existing) {
-      // Não sobrescrever API key se vier vazia ou mascarada
-      if (!data.api_key || data.api_key.includes('...')) {
-        delete data.api_key
-      }
       await db.update(manychatConfig).set(data).where(eq(manychatConfig.id, existing.id))
     } else {
       await db.insert(manychatConfig).values(data)
     }
 
     const [updated] = await db.select().from(manychatConfig).limit(1)
-    res.json({ success: true, config: { ...updated, api_key: updated?.api_key ? `${updated.api_key.slice(0, 6)}...` : '' } })
+    res.json({
+      success: true,
+      config: { ...updated, api_key: updated?.api_key ? `${updated.api_key.slice(0, 6)}...` : '' },
+    })
   } catch (error) {
-    console.error('[ManyChat/Config] Erro ao salvar:', error)
+    logger.error({ error }, '[ManyChat/Config] Erro ao salvar')
     res.status(500).json({ error: 'Erro ao salvar configuração' })
   }
 })
 
-// POST /api/manychat/config/test — testar conexão com a API
+// POST /api/manychat/config/test
 manychatConfigRouter.post('/config/test', async (_req, res) => {
   try {
     const config = await getManychatConfig()
@@ -102,9 +137,7 @@ manychatConfigRouter.post('/config/test', async (_req, res) => {
   }
 })
 
-// ─── Subscribers ──────────────────────────────────────────────────────────────
-
-// GET /api/manychat/subscribers — listar subscribers conhecidos
+// GET /api/manychat/subscribers
 manychatConfigRouter.get('/subscribers', async (req, res) => {
   try {
     const db = await getDb()
@@ -119,18 +152,17 @@ manychatConfigRouter.get('/subscribers', async (req, res) => {
   }
 })
 
-// POST /api/manychat/subscribers — cadastrar subscriber manualmente
+// POST /api/manychat/subscribers
 manychatConfigRouter.post('/subscribers', async (req, res) => {
   try {
-    const db = await getDb()
-    const { whatsapp, subscriber_id, name, therapist_id, patient_id } = req.body
-
-    if (!whatsapp || !subscriber_id) {
-      res.status(400).json({ error: 'whatsapp e subscriber_id são obrigatórios' })
+    const parsed = subscriberSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
       return
     }
 
-    const clean = whatsapp.replace(/\D/g, '')
+    const db = await getDb()
+    const clean = parsed.data.whatsapp.replace(/\D/g, '')
     const existing = await db
       .select()
       .from(manychatSubscribers)
@@ -140,12 +172,15 @@ manychatConfigRouter.post('/subscribers', async (req, res) => {
     if (existing.length > 0) {
       await db
         .update(manychatSubscribers)
-        .set({ subscriber_id, name, therapist_id, patient_id })
+        .set({
+          subscriber_id: parsed.data.subscriber_id,
+          name: parsed.data.name,
+          therapist_id: parsed.data.therapist_id,
+          patient_id: parsed.data.patient_id,
+        })
         .where(eq(manychatSubscribers.whatsapp, clean))
     } else {
-      await db.insert(manychatSubscribers).values({
-        whatsapp: clean, subscriber_id, name, therapist_id, patient_id,
-      })
+      await db.insert(manychatSubscribers).values({ ...parsed.data, whatsapp: clean })
     }
 
     res.json({ success: true })

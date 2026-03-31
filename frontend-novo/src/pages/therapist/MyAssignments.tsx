@@ -41,7 +41,7 @@ export function TherapistAssignments() {
     <div className="space-y-5">
       <div>
         <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Portal do Terapeuta</p>
-        <h1 className="text-2xl font-bold text-gray-100">Minhas Atribuições</h1>
+        <h1 className="text-2xl font-bold text-gray-100 tracking-tight">Minhas Atribuições</h1>
       </div>
 
       <p className="text-sm text-gray-500">

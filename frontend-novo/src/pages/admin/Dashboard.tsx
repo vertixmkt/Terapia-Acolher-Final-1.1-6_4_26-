@@ -27,16 +27,25 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [matchingLog, setMatchingLog] = useState<MatchingDecision[]>([])
   const [purchases, setPurchases] = useState<KiwifyPurchase[]>([])
+  const [matchingWeights, setMatchingWeights] = useState({ gender: 90, shift: 85, specialty: 70 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [s, log, purch] = await Promise.all([
+        const [s, log, purch, mode] = await Promise.all([
           api.dashboard.stats(),
           api.matching.log().catch(() => []),
           api.webhooks.kiwify.list().catch(() => []),
+          api.matching.getMode().catch(() => null),
         ])
+        if (mode) {
+          setMatchingWeights({
+            gender: mode.weight_gender ?? 90,
+            shift: mode.weight_shift ?? 85,
+            specialty: mode.weight_specialty ?? 70,
+          })
+        }
         setStats(s)
         setMatchingLog(log)
         setPurchases(purch.slice(0, 5).map((p: any) => ({
@@ -89,7 +98,7 @@ export function AdminDashboard() {
     <div className="space-y-4 w-full">
       <div>
         <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Painel de controle</p>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-100 tracking-tight">Dashboard</h1>
       </div>
 
       {stats.patients_without_therapist > 0 && (
@@ -134,7 +143,11 @@ export function AdminDashboard() {
               <ModeButton mode="pausado" current={stats.match_mode} onClick={() => handleSetMode('pausado')} />
             </div>
             <div className="space-y-3 pt-1">
-              {[{ label: 'Genero', weight: 90 }, { label: 'Turno', weight: 85 }, { label: 'Abordagem (IA)', weight: 70 }].map(({ label, weight }) => (
+              {[
+                { label: 'Gênero', weight: matchingWeights.gender },
+                { label: 'Turno', weight: matchingWeights.shift },
+                { label: 'Abordagem (IA)', weight: matchingWeights.specialty },
+              ].map(({ label, weight }) => (
                 <div key={label}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-gray-400">{label}</span>
@@ -222,7 +235,7 @@ export function AdminDashboard() {
                   <td className="px-4 py-3 text-gray-300 text-xs sm:text-sm">{p.therapist_name}</td>
                   <td className="px-4 py-3 text-gray-400 text-xs hidden sm:table-cell">{p.product_name}</td>
                   <td className="px-4 py-3 text-gray-300 font-medium text-xs sm:text-sm">+{p.leads_qty}</td>
-                  <td className="px-4 py-3 text-gray-300 text-xs sm:text-sm">R$ {p.amount}</td>
+                  <td className="px-4 py-3 text-gray-300 text-xs sm:text-sm">{p.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                   <td className="px-4 py-3">
                     <Badge variant={p.status === 'completed' ? 'green' : p.status === 'pending' ? 'yellow' : 'red'}>
                       {p.status === 'completed' ? 'Pago' : p.status === 'pending' ? 'Pendente' : 'Estornado'}

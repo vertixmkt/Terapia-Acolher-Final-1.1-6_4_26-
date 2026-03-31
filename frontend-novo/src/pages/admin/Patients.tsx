@@ -270,7 +270,7 @@ export function AdminPatients() {
     <div className="space-y-4 w-full">
       <div>
         <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Gerenciar</p>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Pacientes</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-100 tracking-tight">Pacientes</h1>
       </div>
 
       {pendingCount > 0 && (
@@ -355,7 +355,16 @@ export function AdminPatients() {
           {filtered.length === 0 && (
             <div className="py-12 text-center text-gray-600">
               <Users size={32} className="mx-auto mb-2 opacity-30" />
-              <p>Nenhum paciente encontrado</p>
+              {search || filterAssigned !== 'todos' ? (
+                <>
+                  <p className="text-sm">Nenhum resultado para esse filtro</p>
+                  <button onClick={() => { setSearch(''); setFilterAssigned('todos') }} className="text-xs text-gray-500 hover:text-orange-400 mt-1 underline transition-colors">
+                    Limpar filtros
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm">Nenhum paciente cadastrado ainda</p>
+              )}
             </div>
           )}
         </div>

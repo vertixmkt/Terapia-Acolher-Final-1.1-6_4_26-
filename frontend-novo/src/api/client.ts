@@ -1,26 +1,27 @@
 /**
- * API Client — conecta o frontend ao backend novo
+ * API Client — conecta o frontend ao backend
  *
- * Configura a BASE_URL via variável de ambiente:
- *   VITE_API_URL=http://localhost:3000   (dev)
- *   VITE_API_URL=https://api.terapiaacolher.com.br  (prod)
+ * Admin auth: JWT obtido via POST /api/auth/admin/login, armazenado em sessionStorage
+ * Therapist auth: JWT obtido via POST /api/therapist/login, armazenado em sessionStorage
  *
- * Admin auth: todas as rotas admin enviam o header
- *   Authorization: Bearer <VITE_ADMIN_SECRET>
+ * Nenhum segredo é armazenado em variáveis de ambiente do frontend.
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-const ADMIN_SECRET = import.meta.env.VITE_ADMIN_SECRET || ''
+
+const ADMIN_TOKEN_KEY = 'admin_jwt'
+const THERAPIST_TOKEN_KEY = 'therapist_token'
 
 function adminHeaders(): Record<string, string> {
+  const token = sessionStorage.getItem(ADMIN_TOKEN_KEY) || ''
   return {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${ADMIN_SECRET}`,
+    Authorization: `Bearer ${token}`,
   }
 }
 
 function therapistHeaders(): Record<string, string> {
-  const token = localStorage.getItem('therapist_token') || ''
+  const token = sessionStorage.getItem(THERAPIST_TOKEN_KEY) || ''
   return {
     'Content-Type': 'application/json',
     'x-therapist-token': token,
@@ -29,6 +30,24 @@ function therapistHeaders(): Record<string, string> {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, options)
+
+  // JWT expirado ou inválido → limpar token e redirecionar para login
+  if (res.status === 401 || res.status === 403) {
+    const isAdminRoute = path.startsWith('/api/dashboard') ||
+      path.startsWith('/api/therapists') ||
+      path.startsWith('/api/patients') ||
+      path.startsWith('/api/assignments') ||
+      path.startsWith('/api/matching') ||
+      path.startsWith('/api/manychat') ||
+      path.startsWith('/api/webhooks')
+
+    if (isAdminRoute) {
+      sessionStorage.removeItem(ADMIN_TOKEN_KEY)
+    } else {
+      sessionStorage.removeItem(THERAPIST_TOKEN_KEY)
+    }
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error((err as any).error || res.statusText)
@@ -116,9 +135,9 @@ export const api = {
 
   matching: {
     getMode: () => request<any>('/api/matching/mode', { headers: adminHeaders() }),
-    setMode: (mode: string) =>
+    setMode: (mode: string, weights?: { weight_gender?: number; weight_shift?: number; weight_specialty?: number }) =>
       request<any>('/api/matching/mode', {
-        method: 'PUT', headers: adminHeaders(), body: JSON.stringify({ mode }),
+        method: 'PUT', headers: adminHeaders(), body: JSON.stringify({ mode, ...weights }),
       }),
     run: () =>
       request<any>('/api/matching/run', {
@@ -155,7 +174,21 @@ export const api = {
         const qs = new URLSearchParams(params as any).toString()
         return request<any[]>(`/api/webhooks/manychat/sent${qs ? `?${qs}` : ''}`, { headers: adminHeaders() })
       },
+      retry: (id: number) =>
+        request<any>(`/api/webhooks/manychat/sent/${id}/retry`, {
+          method: 'POST', headers: adminHeaders(),
+        }),
     },
+  },
+
+  // ─── Config ManyChat ─────────────────────────────────────────────────────────
+
+  manychatConfig: {
+    get: () => request<any>('/api/manychat/config', { headers: adminHeaders() }),
+    update: (data: any) =>
+      request<any>('/api/manychat/config', {
+        method: 'PUT', headers: adminHeaders(), body: JSON.stringify(data),
+      }),
   },
 
   // ─── Portal do Terapeuta ─────────────────────────────────────────────────────

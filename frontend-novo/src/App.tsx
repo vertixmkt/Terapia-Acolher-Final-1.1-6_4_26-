@@ -8,17 +8,14 @@ import { AdminAssignments } from './pages/admin/Assignments'
 import { AdminMatching } from './pages/admin/Matching'
 import { AdminAuthorization } from './pages/admin/Authorization'
 import { AdminQuickRegister } from './pages/admin/QuickRegister'
+import { AdminWebhooksManychatReceived } from './pages/admin/WebhooksManychatReceived'
+import { AdminWebhooksManychatSent } from './pages/admin/WebhooksManychatSent'
+import { AdminPurchasesKiwify } from './pages/admin/PurchasesKiwify'
+import { AdminConfig } from './pages/admin/Config'
 import { TherapistProfile } from './pages/therapist/MyProfile'
 import { TherapistAssignments } from './pages/therapist/MyAssignments'
 import { TherapistBalance } from './pages/therapist/MyBalance'
 import { Heart, ShieldCheck, User } from 'lucide-react'
-
-function Purchases() {
-  return <div className="text-gray-400">Compras Kiwify — em breve</div>
-}
-function Config() {
-  return <div className="text-gray-400">Configurações — em breve</div>
-}
 
 function Landing() {
   return (
@@ -81,8 +78,10 @@ export default function App() {
           <Route path="terapeutas" element={<AdminTherapists />} />
           <Route path="atribuicoes" element={<AdminAssignments />} />
           <Route path="matching" element={<AdminMatching />} />
-          <Route path="compras" element={<Purchases />} />
-          <Route path="config" element={<Config />} />
+          <Route path="webhooks-recebidos" element={<AdminWebhooksManychatReceived />} />
+          <Route path="webhooks-enviados" element={<AdminWebhooksManychatSent />} />
+          <Route path="compras" element={<AdminPurchasesKiwify />} />
+          <Route path="config" element={<AdminConfig />} />
         </Route>
 
         <Route path="/terapeuta" element={<TherapistLayout />}>

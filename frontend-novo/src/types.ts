@@ -22,6 +22,7 @@ export interface Therapist {
   total_assignments: number
   last_assigned_at: string | null
   manychat_subscriber_id: string | null
+  has_formation: boolean
   created_at: string
 }
 
@@ -83,4 +84,65 @@ export interface MatchingDecision {
   score: number
   reason: string
   decided_at: string
+}
+
+export interface WebhookManychatReceived {
+  id: number
+  type: string
+  contact_name: string
+  contact_phone: string
+  contact_email: string | null
+  gender: string | null
+  shift: string | null
+  reason: string | null
+  subscriber_id: string | null
+  processing_status: 'pending' | 'processed' | 'error'
+  patient_id: number | null
+  created_at: string
+}
+
+export interface WebhookManychatSent {
+  id: number
+  type: string
+  recipient_name: string
+  recipient_whatsapp: string | null
+  recipient_subscriber_id: string | null
+  assignment_id: number | null
+  status: 'success' | 'error' | 'skipped'
+  error_message: string | null
+  created_at: string
+}
+
+export interface WebhookKiwify {
+  id: number
+  order_id: string
+  customer_name: string
+  customer_email: string
+  customer_phone: string
+  product_name: string
+  offer_name: string
+  leads_qty: number
+  amount: number
+  order_status: string
+  processing_status: 'pending' | 'processed' | 'error'
+  therapist_id: number | null
+  created_at: string
+}
+
+export interface ManychatConfig {
+  id?: number
+  api_key: string
+  flow_ns_notify_therapist: string
+  flow_ns_notify_patient: string
+  tag_id_new_patient: number
+  tag_id_therapist_assigned: number
+  cf_id_patient_name: number
+  cf_id_patient_whatsapp: number
+  cf_id_patient_shift: number
+  cf_id_patient_reason: number
+  cf_id_patient_assigned: number
+  cf_id_therapist_name: number
+  cf_id_therapist_whatsapp: number
+  cf_id_therapist_assigned: number
+  active: boolean
 }

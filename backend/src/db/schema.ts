@@ -32,6 +32,8 @@ export const therapists = mysqlTable('therapists', {
   last_assigned_at: timestamp('last_assigned_at'),
   // ManyChat — subscriber_id para envio de notificações
   manychat_subscriber_id: varchar('manychat_subscriber_id', { length: 255 }),
+  // Formação Rodrigo — tiebreaker no matching
+  has_formation: boolean('has_formation').default(false),
   // P3: reposições de lead
   replenishments_used: int('replenishments_used').default(0),
   replenishments_max: int('replenishments_max').default(3),

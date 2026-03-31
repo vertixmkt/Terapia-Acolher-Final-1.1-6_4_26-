@@ -300,19 +300,26 @@ Se Nivel 3 vazio:
 
 Dentro do nivel da cascata, o sistema seleciona **1 terapeuta** usando:
 
-### Criterio 1 (primario): Ultima atribuicao mais antiga
+### Criterio 1 (primario): Maior score
 ```
-Ordenar por last_assigned_at ASC (mais antigo primeiro)
+Ordenar por score DESC (melhor compatibilidade primeiro)
 ```
-Prioriza terapeutas que nao receberam pacientes recentemente, garantindo distribuicao justa.
+
+### Criterio 2 (desempate): Formacao Rodrigo
+```
+Se scores iguais:
+   terapeuta com has_formation = true tem prioridade
+```
+Terapeutas com a formacao oficial do Rodrigo ganham o match quando o score e identico.
+
+### Criterio 3 (desempate final): Ultima atribuicao mais antiga
+```
+Se score E formacao iguais:
+   ordenar por last_assigned_at ASC (mais antigo primeiro)
+```
+Garante distribuicao justa entre terapeutas com o mesmo perfil.
 
 Se o terapeuta nunca recebeu um paciente (`last_assigned_at = null`), ele tem prioridade maxima (timestamp = 0).
-
-### Criterio 2 (desempate): Maior score
-```
-Se last_assigned_at igual:
-   ordenar por score DESC (maior score primeiro)
-```
 
 ### Resultado
 1 terapeuta selecionado.
@@ -473,8 +480,9 @@ WHERE id = {assignmentId}
                      ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ PASSO 7: Distribuicao de Carga                                  │
-│ • Ordenar por ultima atribuicao (mais antiga primeiro)           │
-│ • Desempate: maior score                                         │
+│ • Criterio 1: maior score                                        │
+│ • Criterio 2: formacao Rodrigo (desempate quando scores iguais)  │
+│ • Criterio 3: ultima atribuicao mais antiga (distribuicao justa) │
 │ → 1 terapeuta selecionado                                        │
 └────────────────────┬────────────────────────────────────────────┘
                      ↓

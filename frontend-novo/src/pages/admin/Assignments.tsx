@@ -1,4 +1,4 @@
-import { Search, GitMerge, RefreshCw, Bell, BellOff, Loader2 } from 'lucide-react'
+import { Search, GitMerge, RefreshCw, Bell, BellOff, Loader2, RotateCcw } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'
@@ -15,6 +15,7 @@ export function AdminAssignments() {
   const [search, setSearch] = useState('')
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(true)
+  const [retrying, setRetrying] = useState<Record<number, boolean>>({})
 
   async function loadData() {
     try {
@@ -28,6 +29,24 @@ export function AdminAssignments() {
   }
 
   useEffect(() => { loadData() }, [])
+
+  async function handleRetry(assignmentId: number) {
+    setRetrying(r => ({ ...r, [assignmentId]: true }))
+    try {
+      const sent = await api.webhooks.manychat.sent()
+      const toRetry = (sent as any[]).filter(
+        s => s.assignment_id === assignmentId && s.status !== 'success'
+      )
+      if (toRetry.length > 0) {
+        await Promise.all(toRetry.map((s: any) => api.webhooks.manychat.retry(s.id)))
+      }
+      await loadData()
+    } catch (err) {
+      console.error('Retry error:', err)
+    } finally {
+      setRetrying(r => ({ ...r, [assignmentId]: false }))
+    }
+  }
 
   const filtered = assignments.filter((a) =>
     (a.patient_name || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -46,7 +65,7 @@ export function AdminAssignments() {
     <div className="space-y-4 w-full">
       <div>
         <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Gerenciar</p>
-        <h1 className="text-2xl font-bold text-gray-100">Atribuições</h1>
+        <h1 className="text-2xl font-bold text-gray-100 tracking-tight">Atribuições</h1>
       </div>
 
       <div className="relative max-w-sm">
@@ -96,9 +115,20 @@ export function AdminAssignments() {
                     {a.assigned_at ? new Date(a.assigned_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-'}
                   </td>
                   <td className="px-5 py-3.5">
-                    <button className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg hover:bg-orange-500/5" title="Reenviar notificações">
-                      <RefreshCw size={12} /> Reenviar
-                    </button>
+                    {(!a.notified_patient || !a.notified_therapist) && (
+                      <button
+                        onClick={() => handleRetry(a.id)}
+                        disabled={retrying[a.id]}
+                        className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-400 transition-colors px-2 py-1 rounded-lg hover:bg-orange-500/5 disabled:opacity-40"
+                        title="Reenviar notificações pendentes"
+                      >
+                        {retrying[a.id]
+                          ? <Loader2 size={12} className="animate-spin" />
+                          : <RotateCcw size={12} />
+                        }
+                        Reenviar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -107,7 +137,16 @@ export function AdminAssignments() {
           {filtered.length === 0 && (
             <div className="py-12 text-center text-gray-600">
               <GitMerge size={32} className="mx-auto mb-2 opacity-30" />
-              <p>Nenhuma atribuição encontrada</p>
+              {search ? (
+                <>
+                  <p className="text-sm">Nenhum resultado para "{search}"</p>
+                  <button onClick={() => setSearch('')} className="text-xs text-gray-500 hover:text-orange-400 mt-1 underline transition-colors">
+                    Limpar busca
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm">Nenhuma atribuição registrada ainda</p>
+              )}
             </div>
           )}
         </div>

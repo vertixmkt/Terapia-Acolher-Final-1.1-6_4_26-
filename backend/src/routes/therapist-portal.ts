@@ -1,30 +1,56 @@
 /**
- * Portal do Terapeuta — rotas autenticadas via token
- * Login via email ou WhatsApp (dados que vieram do Kiwify/cadastro)
+ * Portal do Terapeuta — rotas autenticadas via token JWT
  */
 
 import { Router } from 'express'
+import { z } from 'zod'
 import { getDb } from '../db/index.js'
 import { therapists, assignments, patients, webhooksKiwify, leadReplenishments } from '../db/schema.js'
-import { eq, desc, and, or } from 'drizzle-orm'
+import { eq, desc, or } from 'drizzle-orm'
 import { therapistAuth, generateTherapistToken, adminAuth } from '../middleware/auth.js'
+import { logger } from '../lib/logger.js'
 
 export const therapistPortalRouter = Router()
+
+const loginSchema = z.object({
+  credential: z.string().min(3, 'Informe seu e-mail ou WhatsApp'),
+})
+
+const updateProfileSchema = z.object({
+  approach: z.string().optional(),
+  specialties: z.array(z.string()).optional(),
+  shifts: z.array(z.enum(['manha', 'tarde', 'noite', 'flexivel'])).optional(),
+  serves_gender: z.enum(['M', 'F', 'NB', 'todos']).optional(),
+  serves_children: z.boolean().optional(),
+  serves_teens: z.boolean().optional(),
+  serves_elderly: z.boolean().optional(),
+  serves_lgbt: z.boolean().optional(),
+  serves_couples: z.boolean().optional(),
+  status: z.enum(['ativo', 'inativo']).optional(), // terapeuta pode pausar atendimentos
+})
+
+const replenishmentSchema = z.object({
+  assignment_id: z.number().int().positive(),
+  reason: z.string().min(1).optional(),
+  contacted_0h: z.boolean().default(false),
+  contacted_24h: z.boolean().default(false),
+  contacted_72h: z.boolean().default(false),
+  contacted_15d: z.boolean().default(false),
+})
 
 // POST /api/therapist/login — login via email ou WhatsApp (público, sem auth)
 therapistPortalRouter.post('/login', async (req, res) => {
   try {
-    const { credential } = req.body
-    if (!credential || typeof credential !== 'string' || credential.trim().length < 3) {
-      res.status(400).json({ error: 'Informe seu e-mail ou WhatsApp' })
+    const parsed = loginSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.errors[0]?.message })
       return
     }
 
     const db = await getDb()
-    const clean = credential.trim()
+    const clean = parsed.data.credential.trim()
     const cleanDigits = clean.replace(/\D/g, '')
 
-    // Buscar por email, whatsapp ou phone
     const conditions = [eq(therapists.email, clean)]
     if (cleanDigits.length >= 10) {
       conditions.push(eq(therapists.whatsapp, cleanDigits))
@@ -54,7 +80,7 @@ therapistPortalRouter.post('/login', async (req, res) => {
       return
     }
 
-    const token = generateTherapistToken(therapist.id)
+    const token = await generateTherapistToken(therapist.id)
     res.json({
       token,
       therapist: {
@@ -64,7 +90,7 @@ therapistPortalRouter.post('/login', async (req, res) => {
       },
     })
   } catch (error) {
-    console.error('[Therapist/Login] Erro:', error)
+    logger.error({ error }, '[Therapist/Login] Erro')
     res.status(500).json({ error: 'Erro ao fazer login' })
   }
 })
@@ -76,7 +102,7 @@ therapistPortalRouter.get('/me', therapistAuth, async (req, res) => {
     const [therapist] = await db
       .select()
       .from(therapists)
-      .where(eq(therapists.id, (req as any).therapistId))
+      .where(eq(therapists.id, req.therapistId!))
 
     if (!therapist) {
       res.status(404).json({ error: 'Terapeuta não encontrado' })
@@ -92,19 +118,15 @@ therapistPortalRouter.get('/me', therapistAuth, async (req, res) => {
 // PUT /api/therapist/me — atualizar próprio perfil
 therapistPortalRouter.put('/me', therapistAuth, async (req, res) => {
   try {
-    const db = await getDb()
-    const id = (req as any).therapistId
-
-    // Campos permitidos para auto-edição (status: ativo/inativo para férias/agenda cheia)
-    const allowed = ['approach', 'specialties', 'shifts', 'serves_gender',
-      'serves_children', 'serves_teens', 'serves_elderly', 'serves_lgbt', 'serves_couples', 'status']
-    const data: Record<string, any> = {}
-    for (const key of allowed) {
-      if (req.body[key] !== undefined) data[key] = req.body[key]
+    const parsed = updateProfileSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
+      return
     }
 
-    await db.update(therapists).set(data).where(eq(therapists.id, id))
-    const [updated] = await db.select().from(therapists).where(eq(therapists.id, id))
+    const db = await getDb()
+    await db.update(therapists).set(parsed.data).where(eq(therapists.id, req.therapistId!))
+    const [updated] = await db.select().from(therapists).where(eq(therapists.id, req.therapistId!))
     res.json(updated)
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar perfil' })
@@ -115,7 +137,6 @@ therapistPortalRouter.put('/me', therapistAuth, async (req, res) => {
 therapistPortalRouter.get('/me/assignments', therapistAuth, async (req, res) => {
   try {
     const db = await getDb()
-    const id = (req as any).therapistId
 
     const rows = await db
       .select({
@@ -132,7 +153,7 @@ therapistPortalRouter.get('/me/assignments', therapistAuth, async (req, res) => 
       })
       .from(assignments)
       .leftJoin(patients, eq(assignments.patient_id, patients.id))
-      .where(eq(assignments.therapist_id, id))
+      .where(eq(assignments.therapist_id, req.therapistId!))
       .orderBy(desc(assignments.assigned_at))
 
     res.json(rows)
@@ -145,23 +166,22 @@ therapistPortalRouter.get('/me/assignments', therapistAuth, async (req, res) => 
 therapistPortalRouter.get('/me/balance', therapistAuth, async (req, res) => {
   try {
     const db = await getDb()
-    const id = (req as any).therapistId
 
     const [therapist] = await db
       .select({ balance: therapists.balance })
       .from(therapists)
-      .where(eq(therapists.id, id))
+      .where(eq(therapists.id, req.therapistId!))
 
     const purchases = await db
       .select()
       .from(webhooksKiwify)
-      .where(eq(webhooksKiwify.therapist_id, id))
+      .where(eq(webhooksKiwify.therapist_id, req.therapistId!))
       .orderBy(desc(webhooksKiwify.created_at))
 
     const replenishments = await db
       .select()
       .from(leadReplenishments)
-      .where(eq(leadReplenishments.therapist_id, id))
+      .where(eq(leadReplenishments.therapist_id, req.therapistId!))
       .orderBy(desc(leadReplenishments.created_at))
 
     res.json({
@@ -177,13 +197,17 @@ therapistPortalRouter.get('/me/balance', therapistAuth, async (req, res) => {
 // POST /api/therapist/me/replenishment — solicitar reposição de lead (P3)
 therapistPortalRouter.post('/me/replenishment', therapistAuth, async (req, res) => {
   try {
-    const db = await getDb()
-    const therapistId = (req as any).therapistId
+    const parsed = replenishmentSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
+      return
+    }
 
+    const db = await getDb()
     const [therapist] = await db
       .select()
       .from(therapists)
-      .where(eq(therapists.id, therapistId))
+      .where(eq(therapists.id, req.therapistId!))
 
     if (!therapist) {
       res.status(404).json({ error: 'Terapeuta não encontrado' })
@@ -197,16 +221,9 @@ therapistPortalRouter.post('/me/replenishment', therapistAuth, async (req, res) 
       return
     }
 
-    const { assignment_id, reason, contacted_0h, contacted_24h, contacted_72h, contacted_15d } = req.body
-
     const result = await db.insert(leadReplenishments).values({
-      therapist_id: therapistId,
-      assignment_id,
-      reason,
-      contacted_0h: contacted_0h ?? false,
-      contacted_24h: contacted_24h ?? false,
-      contacted_72h: contacted_72h ?? false,
-      contacted_15d: contacted_15d ?? false,
+      therapist_id: req.therapistId!,
+      ...parsed.data,
       status: 'pending',
     })
 
@@ -222,8 +239,14 @@ therapistPortalRouter.post('/me/replenishment', therapistAuth, async (req, res) 
 
 // ─── Admin: gerar token para terapeuta ────────────────────────────────────────
 
-// POST /api/therapist/token/:id — admin gera token para enviar ao terapeuta via ManyChat
-therapistPortalRouter.post('/token/:id', adminAuth, async (_req, res) => {
-  const token = generateTherapistToken(parseInt(_req.params.id))
+// POST /api/therapist/token/:id — admin gera link de acesso para o terapeuta
+therapistPortalRouter.post('/token/:id', adminAuth, async (req, res) => {
+  const therapistId = parseInt(req.params.id)
+  if (isNaN(therapistId)) {
+    res.status(400).json({ error: 'ID inválido' })
+    return
+  }
+
+  const token = await generateTherapistToken(therapistId)
   res.json({ token, portal_url: `${process.env.FRONTEND_URL}/terapeuta?token=${token}` })
 })

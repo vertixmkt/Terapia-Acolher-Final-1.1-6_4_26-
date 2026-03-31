@@ -1,14 +1,15 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import { getDb } from '../db/index.js'
 import { therapists, webhooksKiwify } from '../db/schema.js'
-import { eq, like, or, desc, and, inArray } from 'drizzle-orm'
+import { eq, like, or, desc, and } from 'drizzle-orm'
 import { adminAuth } from '../middleware/auth.js'
 import { matchPendingPatients } from '../services/matching.js'
-import { z } from 'zod'
+import { logger } from '../lib/logger.js'
 
 export const therapistsRouter = Router()
 
-// ─── Cadastro público (P1) — sem auth ────────────────────────────────────────
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -27,12 +28,26 @@ const registerSchema = z.object({
   shifts: z.array(z.enum(['manha', 'tarde', 'noite', 'flexivel'])).default(['manha']),
 })
 
+const adminCreateSchema = registerSchema.extend({
+  status: z.enum(['ativo', 'inativo', 'pendente']).default('pendente'),
+  balance: z.number().int().min(0).default(0),
+  manychat_subscriber_id: z.string().optional(),
+  has_formation: z.boolean().default(false),
+})
+
+const adminUpdateSchema = adminCreateSchema.partial()
+
+const authorizeSchema = z.object({
+  balance: z.number().int().min(0).optional(),
+})
+
+// ─── Cadastro público (P1) — sem auth ────────────────────────────────────────
+
 therapistsRouter.post('/register', async (req, res) => {
   try {
     const data = registerSchema.parse(req.body)
     const db = await getDb()
 
-    // Inserir terapeuta com status pendente e saldo 0
     const result = await db.insert(therapists).values({
       ...data,
       status: 'pendente',
@@ -41,7 +56,6 @@ therapistsRouter.post('/register', async (req, res) => {
 
     const therapistId = (result as any)[0].insertId
 
-    // P1: Processar webhooks Kiwify pendentes para este email/whatsapp
     let leadsGranted = 0
     if (data.email || data.whatsapp) {
       const conditions = []
@@ -76,10 +90,9 @@ therapistsRouter.post('/register', async (req, res) => {
       }
     }
 
-    // Se terapeuta recebeu saldo via Kiwify pendente → tentar matching
     if (leadsGranted > 0) {
       matchPendingPatients().catch(err =>
-        console.error('[Therapists/Register] Erro no matching automático:', err)
+        logger.error({ error: err }, '[Therapists/Register] Erro no matching automático')
       )
     }
 
@@ -94,7 +107,7 @@ therapistsRouter.post('/register', async (req, res) => {
       res.status(400).json({ error: 'Dados inválidos', details: error.errors })
       return
     }
-    console.error('[Therapists/Register] Erro:', error)
+    logger.error({ error }, '[Therapists/Register] Erro')
     res.status(500).json({ error: 'Erro ao registrar terapeuta' })
   }
 })
@@ -103,7 +116,7 @@ therapistsRouter.post('/register', async (req, res) => {
 
 therapistsRouter.use(adminAuth)
 
-// GET /api/therapists — listar todos
+// GET /api/therapists
 therapistsRouter.get('/', async (req, res) => {
   try {
     const db = await getDb()
@@ -129,7 +142,7 @@ therapistsRouter.get('/', async (req, res) => {
     const rows = await query.orderBy(desc(therapists.created_at))
     res.json(rows)
   } catch (error) {
-    console.error('[Therapists/List] Erro:', error)
+    logger.error({ error }, '[Therapists/List] Erro')
     res.status(500).json({ error: 'Erro ao listar terapeutas' })
   }
 })
@@ -137,11 +150,14 @@ therapistsRouter.get('/', async (req, res) => {
 // GET /api/therapists/:id
 therapistsRouter.get('/:id', async (req, res) => {
   try {
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
+
     const db = await getDb()
     const [therapist] = await db
       .select()
       .from(therapists)
-      .where(eq(therapists.id, parseInt(req.params.id)))
+      .where(eq(therapists.id, id))
 
     if (!therapist) {
       res.status(404).json({ error: 'Terapeuta não encontrado' })
@@ -156,18 +172,21 @@ therapistsRouter.get('/:id', async (req, res) => {
 // POST /api/therapists — criar (admin)
 therapistsRouter.post('/', async (req, res) => {
   try {
+    const parsed = adminCreateSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
+      return
+    }
+
     const db = await getDb()
-    const result = await db.insert(therapists).values({
-      ...req.body,
-      status: req.body.status ?? 'pendente',
-    })
+    const result = await db.insert(therapists).values(parsed.data)
     const [created] = await db
       .select()
       .from(therapists)
       .where(eq(therapists.id, (result as any)[0].insertId))
     res.status(201).json(created)
   } catch (error) {
-    console.error('[Therapists/Create] Erro:', error)
+    logger.error({ error }, '[Therapists/Create] Erro')
     res.status(500).json({ error: 'Erro ao criar terapeuta' })
   }
 })
@@ -175,15 +194,21 @@ therapistsRouter.post('/', async (req, res) => {
 // PUT /api/therapists/:id — atualizar
 therapistsRouter.put('/:id', async (req, res) => {
   try {
-    const db = await getDb()
     const id = parseInt(req.params.id)
-    const { id: _id, created_at, ...data } = req.body
+    if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
 
-    await db.update(therapists).set(data).where(eq(therapists.id, id))
+    const parsed = adminUpdateSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
+      return
+    }
+
+    const db = await getDb()
+    await db.update(therapists).set(parsed.data).where(eq(therapists.id, id))
     const [updated] = await db.select().from(therapists).where(eq(therapists.id, id))
     res.json(updated)
   } catch (error) {
-    console.error('[Therapists/Update] Erro:', error)
+    logger.error({ error }, '[Therapists/Update] Erro')
     res.status(500).json({ error: 'Erro ao atualizar terapeuta' })
   }
 })
@@ -191,19 +216,24 @@ therapistsRouter.put('/:id', async (req, res) => {
 // PATCH /api/therapists/:id/authorize — aprovar cadastro
 therapistsRouter.patch('/:id/authorize', async (req, res) => {
   try {
-    const db = await getDb()
     const id = parseInt(req.params.id)
-    const { balance } = req.body
+    if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
 
+    const parsed = authorizeSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Dados inválidos', details: parsed.error.errors })
+      return
+    }
+
+    const db = await getDb()
     const updateData: Record<string, any> = { status: 'ativo' }
-    if (balance !== undefined) updateData.balance = balance
+    if (parsed.data.balance !== undefined) updateData.balance = parsed.data.balance
 
     await db.update(therapists).set(updateData).where(eq(therapists.id, id))
     const [updated] = await db.select().from(therapists).where(eq(therapists.id, id))
 
-    // Terapeuta ficou ativo → tentar atribuir pacientes pendentes
     matchPendingPatients().catch(err =>
-      console.error('[Therapists/Authorize] Erro no matching automático:', err)
+      logger.error({ error: err }, '[Therapists/Authorize] Erro no matching automático')
     )
 
     res.json(updated)
@@ -215,11 +245,14 @@ therapistsRouter.patch('/:id/authorize', async (req, res) => {
 // DELETE /api/therapists/:id — desativar (soft)
 therapistsRouter.delete('/:id', async (req, res) => {
   try {
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
+
     const db = await getDb()
     await db
       .update(therapists)
       .set({ status: 'inativo' })
-      .where(eq(therapists.id, parseInt(req.params.id)))
+      .where(eq(therapists.id, id))
     res.json({ success: true })
   } catch (error) {
     res.status(500).json({ error: 'Erro ao desativar terapeuta' })

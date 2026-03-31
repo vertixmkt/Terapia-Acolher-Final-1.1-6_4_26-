@@ -181,7 +181,7 @@ export function AdminAuthorization() {
     <div className="space-y-4 w-full">
       <div>
         <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Gestao de terapeutas</p>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-100">Autorizacao de Cadastros</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-100 tracking-tight">Autorizacao de Cadastros</h1>
         <p className="text-sm text-gray-500 mt-1">Revise e autorize novos cadastros de terapeutas</p>
       </div>
 

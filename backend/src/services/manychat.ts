@@ -1,5 +1,5 @@
 /**
- * Serviço ManyChat — replicando exatamente o fluxo do sistema original
+ * Serviço ManyChat
  *
  * Fluxo de notificação após matching:
  * 1. setCustomField() × N (preencher campos antes do flow)
@@ -11,7 +11,8 @@
 
 import { getDb } from '../db/index.js'
 import { manychatConfig, manychatSubscribers, webhooksManychatSent } from '../db/schema.js'
-import { eq, or } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
+import { logger } from '../lib/logger.js'
 
 const MANYCHAT_BASE_URL = 'https://api.manychat.com'
 
@@ -46,17 +47,14 @@ export async function getManychatConfig(): Promise<ManychatConfig | null> {
 }
 
 // ─── Obter Subscriber ID ──────────────────────────────────────────────────────
-// Prioridade: campo direto > tabela manychat_subscribers
 
 export async function resolveSubscriberId(
   directId: string | null | undefined,
   whatsapp: string | null | undefined,
 ): Promise<string | null> {
-  // 1. Usar ID direto se for um ID válido do ManyChat (> 1 milhão)
   if (directId && parseInt(directId) > 1_000_000) return directId
   if (directId && directId.trim() !== '') return directId
 
-  // 2. Buscar na tabela de subscribers pelo WhatsApp
   if (whatsapp) {
     const db = await getDb()
     const clean = whatsapp.replace(/\D/g, '')
@@ -100,7 +98,6 @@ async function callManychat(
   }
 }
 
-// Preencher custom field por ID
 export async function setCustomFieldById(
   subscriberId: string,
   fieldId: number,
@@ -114,7 +111,6 @@ export async function setCustomFieldById(
   }, apiKey)
 }
 
-// Adicionar tag (dispara flow automaticamente se configurado no ManyChat)
 export async function addTag(
   subscriberId: string,
   tagId: number,
@@ -126,7 +122,6 @@ export async function addTag(
   }, apiKey)
 }
 
-// Disparar flow diretamente (alternativa à tag)
 export async function sendFlow(
   subscriberId: string,
   flowNs: string,
@@ -138,11 +133,7 @@ export async function sendFlow(
   }, apiKey)
 }
 
-// ─── Notificação ao TERAPEUTA após matching ───────────────────────────────────
-// Replica exatamente o fluxo do sistema original:
-// 1. Preencher 5 custom fields com dados do paciente
-// 2. Aguardar 2s
-// 3. Aplicar tag NOVO PACIENTE → dispara flow no ManyChat
+// ─── Notificação ao TERAPEUTA ─────────────────────────────────────────────────
 
 export async function notifyTherapist(params: {
   therapistSubscriberId: string
@@ -156,7 +147,7 @@ export async function notifyTherapist(params: {
 }): Promise<void> {
   const config = await getManychatConfig()
   if (!config) {
-    console.warn('[ManyChat] Config não encontrada ou inativa — notificação ao terapeuta ignorada')
+    logger.warn('[ManyChat] Config inativa — notificação ao terapeuta ignorada')
     return
   }
 
@@ -167,7 +158,6 @@ export async function notifyTherapist(params: {
     tag_id_new_patient, api_key,
   } = config
 
-  // 1. Preencher todos os custom fields em paralelo
   const fieldResults = await Promise.allSettled([
     setCustomFieldById(sub, cf_id_patient_name, params.patientName, api_key),
     setCustomFieldById(sub, cf_id_patient_whatsapp, params.patientWhatsapp, api_key),
@@ -178,10 +168,8 @@ export async function notifyTherapist(params: {
 
   await logSentBatch('notify_therapist', sub, 'Terapeuta', params.therapistId, params.assignmentId, fieldResults)
 
-  // 2. Aguardar 2s para garantir que campos estão disponíveis no flow
   await delay(2000)
 
-  // 3. Aplicar tag → dispara o flow no ManyChat automaticamente
   const tagResult = await addTag(sub, tag_id_new_patient, api_key)
   await logSent({
     type: 'add_tag',
@@ -194,17 +182,13 @@ export async function notifyTherapist(params: {
   })
 
   if (tagResult.success) {
-    console.log(`[ManyChat] ✅ Terapeuta ${params.therapistId} notificado (paciente ${params.patientId})`)
+    logger.info({ therapistId: params.therapistId, patientId: params.patientId }, '[ManyChat] Terapeuta notificado')
   } else {
-    console.error(`[ManyChat] ❌ Erro ao notificar terapeuta ${params.therapistId}:`, tagResult.error)
+    logger.error({ therapistId: params.therapistId, error: tagResult.error }, '[ManyChat] Erro ao notificar terapeuta')
   }
 }
 
-// ─── Notificação ao PACIENTE após matching ────────────────────────────────────
-// Replica exatamente o fluxo do sistema original:
-// 1. Preencher custom fields com dados do terapeuta
-// 2. Aguardar 2s
-// 3. Aplicar tag TERAPEUTA ATRIBUÍDO → dispara flow
+// ─── Notificação ao PACIENTE ──────────────────────────────────────────────────
 
 export async function notifyPatient(params: {
   patientSubscriberId: string
@@ -216,7 +200,7 @@ export async function notifyPatient(params: {
 }): Promise<void> {
   const config = await getManychatConfig()
   if (!config) {
-    console.warn('[ManyChat] Config não encontrada ou inativa — notificação ao paciente ignorada')
+    logger.warn('[ManyChat] Config inativa — notificação ao paciente ignorada')
     return
   }
 
@@ -227,7 +211,6 @@ export async function notifyPatient(params: {
     tag_id_therapist_assigned, api_key,
   } = config
 
-  // 1. Preencher custom fields em paralelo
   const fieldResults = await Promise.allSettled([
     setCustomFieldById(sub, cf_id_therapist_name, params.therapistName, api_key),
     setCustomFieldById(sub, cf_id_therapist_whatsapp, params.therapistWhatsapp, api_key),
@@ -237,10 +220,8 @@ export async function notifyPatient(params: {
 
   await logSentBatch('notify_patient', sub, 'Paciente', params.therapistId, params.assignmentId, fieldResults)
 
-  // 2. Aguardar 2s
   await delay(2000)
 
-  // 3. Aplicar tag → dispara flow
   const tagResult = await addTag(sub, tag_id_therapist_assigned, api_key)
   await logSent({
     type: 'add_tag',
@@ -253,13 +234,13 @@ export async function notifyPatient(params: {
   })
 
   if (tagResult.success) {
-    console.log(`[ManyChat] ✅ Paciente ${params.patientId} notificado (terapeuta ${params.therapistId})`)
+    logger.info({ patientId: params.patientId, therapistId: params.therapistId }, '[ManyChat] Paciente notificado')
   } else {
-    console.error(`[ManyChat] ❌ Erro ao notificar paciente ${params.patientId}:`, tagResult.error)
+    logger.error({ patientId: params.patientId, error: tagResult.error }, '[ManyChat] Erro ao notificar paciente')
   }
 }
 
-// ─── Salvar Subscriber do ManyChat ───────────────────────────────────────────
+// ─── Salvar Subscriber ────────────────────────────────────────────────────────
 
 export async function upsertSubscriber(
   whatsapp: string,
@@ -325,7 +306,7 @@ async function logSent(params: {
       sent_at: new Date(),
     })
   } catch (err) {
-    console.error('[ManyChat/Log] Erro ao salvar log:', err)
+    logger.error({ error: err }, '[ManyChat/Log] Erro ao salvar log')
   }
 }
 
