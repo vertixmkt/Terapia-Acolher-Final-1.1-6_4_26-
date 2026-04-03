@@ -146,11 +146,13 @@ webhooksKiwifyRouter.post('/', async (req, res) => {
       ? await db.select().from(therapists).where(or(...conditions)).limit(1)
       : []
 
-    const therapist = existingTherapists[0] ?? null
+    let therapist = existingTherapists[0] ?? null
     let processing_status: 'pending' | 'processed' | 'error' = 'pending'
     let therapist_id: number | undefined
+    let auto_created = false
 
     if (therapist) {
+      // Terapeuta já existe → creditar saldo
       await db
         .update(therapists)
         .set({ balance: (therapist.balance ?? 0) + leads_qty })
@@ -162,6 +164,27 @@ webhooksKiwifyRouter.post('/', async (req, res) => {
       matchPendingPatients().catch(err =>
         logger.error({ error: err }, '[Webhook/Kiwify] Erro no matching automático')
       )
+    } else if (customer_name && (customer_email || customer_phone)) {
+      // Terapeuta não existe → criar automaticamente com dados da compra
+      const result = await db.insert(therapists).values({
+        name: customer_name,
+        email: customer_email || null,
+        whatsapp: customer_phone || '',
+        phone: customer_phone || null,
+        gender: 'F', // padrão — terapeuta corrige no onboarding
+        approach: '',
+        specialties: [],
+        shifts: ['manha'],
+        serves_gender: 'todos',
+        status: 'pendente',
+        balance: leads_qty,
+      })
+
+      therapist_id = (result as any)[0].insertId
+      processing_status = 'processed'
+      auto_created = true
+
+      logger.info({ therapist_id, customer_name, leads_qty }, '[Webhook/Kiwify] Terapeuta criado automaticamente')
     }
 
     await db.insert(webhooksKiwify).values({
@@ -180,8 +203,8 @@ webhooksKiwifyRouter.post('/', async (req, res) => {
       raw_payload: body,
     })
 
-    logger.info({ order_id, leads_qty, therapist_found: !!therapist }, '[Webhook/Kiwify] Processado')
-    res.json({ success: true, order_id, leads_qty, therapist_found: !!therapist, processing_status })
+    logger.info({ order_id, leads_qty, therapist_found: !!therapist, auto_created }, '[Webhook/Kiwify] Processado')
+    res.json({ success: true, order_id, leads_qty, therapist_found: !!therapist || auto_created, auto_created, processing_status })
   } catch (error) {
     logger.error({ error, requestId: req.requestId }, '[Webhook/Kiwify] Erro')
     res.status(500).json({ error: 'Erro ao processar webhook' })

@@ -1,5 +1,5 @@
 # ROADMAP 2.0 — Cérebro Terapia Acolher
-> Documento canônico do estado atual do projeto — atualizado em 31/03/2026
+> Documento canônico do estado atual do projeto — atualizado em 03/04/2026
 
 ---
 
@@ -397,11 +397,80 @@ Todas as páginas e funcionalidades pendentes foram implementadas.
 
 ---
 
+## ✅ Deploy em Produção (03/04/2026)
+
+### Infraestrutura
+
+| Item | Detalhe |
+|---|---|
+| Servidor | VPS `76.13.70.229` — Ubuntu 24.04 |
+| Node.js | v20 (PM2 — `terapia-acolher-api`, restart automático) |
+| Banco | MySQL 8.0 — banco `terapia_acolher`, usuário `acolher` |
+| Proxy | Nginx 1.24 — serve frontend estático + proxy `/api/*` → Node porta 3000 |
+| SSL | Let's Encrypt (Certbot) — renovação automática |
+| Paths | Backend: `/opt/terapia-acolher/backend` · Frontend: `/opt/terapia-acolher/frontend` |
+
+### URLs de produção
+
+| Portal | URL |
+|---|---|
+| Admin | `https://admin.terapiaacolher.com.br` |
+| Terapeuta | `https://terapeuta.terapiaacolher.com.br` |
+| Health check | `https://admin.terapiaacolher.com.br/health` |
+
+### Webhook Kiwify (produção)
+```
+POST https://admin.terapiaacolher.com.br/api/webhooks/kiwify
+```
+
+### Webhook ManyChat — receber paciente (produção)
+```
+POST https://admin.terapiaacolher.com.br/api/webhooks/manychat/patient
+```
+
+---
+
+## ✅ Funcionalidades implementadas em 03/04/2026
+
+### Fluxo de cadastro automático de terapeuta via Kiwify
+- Webhook Kiwify: quando terapeuta não existe no banco → criado automaticamente com nome, email e WhatsApp da compra
+- Saldo creditado imediatamente
+- Status inicial: `pendente` (aguardando onboarding)
+- Se terapeuta já existe: saldo incrementado normalmente
+
+### Fluxo de onboarding do terapeuta (portal)
+Novo fluxo de 3 etapas ao primeiro acesso:
+
+1. **Login** — email ou WhatsApp (mesmo da compra Kiwify)
+2. **Criar senha** — mínimo 8 caracteres, confirmação, hash `scrypt` com salt (nativo Node.js, sem dependências)
+3. **Onboarding** — formulário de seleção por tags: gênero, abordagem, especialidades, turnos, público atendido, formação
+4. **Auto-aprovação** — ao submeter perfil completo (abordagem + especialidade + turno), status muda de `pendente` → `ativo` automaticamente e terapeuta entra na fila de matching
+
+### Autenticação com senha no portal do terapeuta
+- **Primeiro acesso**: digita email/WhatsApp → campo de senha aparece dinamicamente → redireciona para tela de criação de senha
+- **Acessos seguintes**: email/WhatsApp + senha
+- Hash via `crypto.scrypt` + salt aleatório (nativo Node.js — sem bcrypt)
+- Endpoint `POST /api/therapist/me/password` (autenticado)
+
+### Seletores de tag no perfil do terapeuta
+- **Abordagem** e **Especialidades** agora são seletores de tag no modo de edição (igual ao onboarding) — sem campo de texto livre
+
+### Fixes
+- **Bug VITE_API_URL** — `|| 'http://localhost:3000'` em `AdminLayout.tsx` e `client.ts` causava "Erro de conexão" em produção. Corrigido para `?? ''` (URL relativa → Nginx faz proxy)
+- **Bug toggles deslocados** — `translate-x-5` (20px) ultrapassava o trilho `w-11` (44px). Corrigido para `translate-x-[22px]` em `Config.tsx` e `Therapists.tsx`
+- **Card "Controle de Matching"** removido do Dashboard (não era necessário)
+- **CORS multi-origem** — `FRONTEND_URL` agora aceita lista separada por vírgula; backend faz lookup dinâmico
+- **Coluna `has_formation`** adicionada ao banco (migration manual + schema Drizzle atualizado)
+- **Coluna `password_hash`** adicionada ao banco (migration manual + schema Drizzle atualizado)
+
+---
+
 ## ❌ Ainda não feito
 
+- **Recuperação de senha por email** — tela "Esqueci minha senha" implementada no frontend, backend pendente. Requer definição do provedor SMTP (Gmail, Brevo, Resend etc.) e configuração das variáveis `SMTP_*` no servidor
+- Integração ManyChat — configurar API Key, Flow NS, Tag IDs e Custom Field IDs na tela de Configurações
 - Notificação do terapeuta via **Telegram** (substituir ManyChat para terapeutas)
-- **Gerente de Operações (LLM + Telegram Bot)** — agente autônomo que monitora o sistema e se comunica com o Rodrigo via Telegram. Notificações proativas (pacientes pendentes, falhas, resumo diário) + respostas sob demanda. Stack: Telegram Bot API + Claude API (Sonnet). Módulo: `backend/src/services/operations-manager.ts`
-- Notificações por **email** ao terapeuta
+- **Gerente de Operações (LLM + Telegram Bot)** — agente autônomo que monitora o sistema e se comunica via Telegram. Notificações proativas (pacientes pendentes, falhas, resumo diário) + respostas sob demanda. Stack: Telegram Bot API + Claude API (Sonnet). Módulo: `backend/src/services/operations-manager.ts`
 - Painel de relatórios e métricas avançadas
 - App mobile (portal do terapeuta)
 

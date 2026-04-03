@@ -4,16 +4,38 @@
 
 import { Router } from 'express'
 import { z } from 'zod'
+import { scrypt, randomBytes, timingSafeEqual } from 'crypto'
+import { promisify } from 'util'
 import { getDb } from '../db/index.js'
 import { therapists, assignments, patients, webhooksKiwify, leadReplenishments } from '../db/schema.js'
 import { eq, desc, or } from 'drizzle-orm'
 import { therapistAuth, generateTherapistToken, adminAuth } from '../middleware/auth.js'
 import { logger } from '../lib/logger.js'
 
+const scryptAsync = promisify(scrypt)
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex')
+  const buf = await scryptAsync(password, salt, 64) as Buffer
+  return `${salt}:${(buf as Buffer).toString('hex')}`
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  const [salt, hashed] = hash.split(':')
+  const buf = await scryptAsync(password, salt, 64) as Buffer
+  const hashedBuf = Buffer.from(hashed, 'hex')
+  return timingSafeEqual(buf, hashedBuf)
+}
+
 export const therapistPortalRouter = Router()
 
 const loginSchema = z.object({
   credential: z.string().min(3, 'Informe seu e-mail ou WhatsApp'),
+  password: z.string().optional(),
+})
+
+const setPasswordSchema = z.object({
+  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
 })
 
 const updateProfileSchema = z.object({
@@ -70,28 +92,70 @@ therapistPortalRouter.post('/login', async (req, res) => {
       return
     }
 
-    if (therapist.status === 'pendente') {
-      res.status(403).json({ error: 'Seu cadastro ainda esta pendente de aprovacao. Aguarde o contato do administrador.' })
-      return
-    }
-
     if (therapist.status === 'inativo') {
       res.status(403).json({ error: 'Seu cadastro esta inativo. Entre em contato com o administrador.' })
       return
     }
 
+    // Se já tem senha cadastrada, exigir a senha
+    if (therapist.password_hash) {
+      if (!parsed.data.password) {
+        res.status(401).json({ error: 'Senha obrigatória', needs_password: true })
+        return
+      }
+      const valid = await verifyPassword(parsed.data.password, therapist.password_hash)
+      if (!valid) {
+        res.status(401).json({ error: 'Senha incorreta' })
+        return
+      }
+    }
+
     const token = await generateTherapistToken(therapist.id)
+
+    const needs_password = !therapist.password_hash
+    const needs_onboarding = !needs_password && (therapist.status === 'pendente' || !therapist.approach || !therapist.specialties?.length)
+
     res.json({
       token,
+      needs_password,
+      needs_onboarding,
       therapist: {
         id: therapist.id,
         name: therapist.name,
         status: therapist.status,
+        gender: therapist.gender,
+        approach: therapist.approach,
+        specialties: therapist.specialties,
+        shifts: therapist.shifts,
+        serves_gender: therapist.serves_gender,
+        serves_children: therapist.serves_children,
+        serves_teens: therapist.serves_teens,
+        serves_elderly: therapist.serves_elderly,
+        serves_lgbt: therapist.serves_lgbt,
+        serves_couples: therapist.serves_couples,
+        has_formation: therapist.has_formation,
       },
     })
   } catch (error) {
     logger.error({ error }, '[Therapist/Login] Erro')
     res.status(500).json({ error: 'Erro ao fazer login' })
+  }
+})
+
+// POST /api/therapist/me/password — definir senha (primeiro acesso ou redefinição)
+therapistPortalRouter.post('/me/password', therapistAuth, async (req, res) => {
+  try {
+    const parsed = setPasswordSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.errors[0]?.message })
+      return
+    }
+    const hash = await hashPassword(parsed.data.password)
+    const db = await getDb()
+    await db.update(therapists).set({ password_hash: hash }).where(eq(therapists.id, req.therapistId!))
+    res.json({ success: true })
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao definir senha' })
   }
 })
 
@@ -115,7 +179,7 @@ therapistPortalRouter.get('/me', therapistAuth, async (req, res) => {
   }
 })
 
-// PUT /api/therapist/me — atualizar próprio perfil
+// PUT /api/therapist/me — atualizar próprio perfil (com auto-aprovação)
 therapistPortalRouter.put('/me', therapistAuth, async (req, res) => {
   try {
     const parsed = updateProfileSchema.safeParse(req.body)
@@ -125,9 +189,28 @@ therapistPortalRouter.put('/me', therapistAuth, async (req, res) => {
     }
 
     const db = await getDb()
-    await db.update(therapists).set(parsed.data).where(eq(therapists.id, req.therapistId!))
+    const [current] = await db.select().from(therapists).where(eq(therapists.id, req.therapistId!))
+
+    const merged = { ...current, ...parsed.data }
+
+    // Auto-aprovação: se pendente e perfil completo → ativo
+    const profileComplete = (
+      merged.approach && merged.approach.trim().length >= 2 &&
+      Array.isArray(merged.specialties) && merged.specialties.length > 0 &&
+      Array.isArray(merged.shifts) && merged.shifts.length > 0 &&
+      merged.serves_gender
+    )
+
+    const updateData: any = { ...parsed.data }
+    if (current.status === 'pendente' && profileComplete) {
+      updateData.status = 'ativo'
+      logger.info({ therapistId: req.therapistId }, '[Therapist/Onboarding] Perfil completo — aprovado automaticamente')
+    }
+
+    await db.update(therapists).set(updateData).where(eq(therapists.id, req.therapistId!))
     const [updated] = await db.select().from(therapists).where(eq(therapists.id, req.therapistId!))
-    res.json(updated)
+
+    res.json({ ...updated, auto_approved: updateData.status === 'ativo' })
   } catch (error) {
     res.status(500).json({ error: 'Erro ao atualizar perfil' })
   }

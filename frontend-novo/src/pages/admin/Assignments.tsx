@@ -1,4 +1,4 @@
-import { Search, GitMerge, RefreshCw, Bell, BellOff, Loader2, RotateCcw } from 'lucide-react'
+import { Search, GitMerge, Bell, BellOff, Loader2, RotateCcw } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Badge } from '../../components/ui/Badge'
 import { Card } from '../../components/ui/Card'

@@ -28,6 +28,7 @@ export const mockTherapists: Therapist[] = [
     total_assignments: 23,
     last_assigned_at: '2026-03-12T10:30:00Z',
     manychat_subscriber_id: '7823049182',
+    has_formation: true,
     created_at: '2025-11-15T08:00:00Z',
   },
   {
@@ -46,6 +47,7 @@ export const mockTherapists: Therapist[] = [
     total_assignments: 45,
     last_assigned_at: '2026-03-11T18:00:00Z',
     manychat_subscriber_id: '9234810293',
+    has_formation: true,
     created_at: '2025-10-01T08:00:00Z',
   },
   {
@@ -64,6 +66,7 @@ export const mockTherapists: Therapist[] = [
     total_assignments: 12,
     last_assigned_at: '2026-03-10T09:15:00Z',
     manychat_subscriber_id: '3847291038',
+    has_formation: true,
     created_at: '2026-01-20T08:00:00Z',
   },
   {
@@ -82,6 +85,7 @@ export const mockTherapists: Therapist[] = [
     total_assignments: 67,
     last_assigned_at: '2025-12-01T20:00:00Z',
     manychat_subscriber_id: null,
+    has_formation: false,
     created_at: '2025-08-10T08:00:00Z',
   },
   {
@@ -100,6 +104,7 @@ export const mockTherapists: Therapist[] = [
     total_assignments: 0,
     last_assigned_at: null,
     manychat_subscriber_id: null,
+    has_formation: true,
     created_at: '2026-03-11T08:00:00Z',
   },
 ]

@@ -8,13 +8,28 @@ import type { Therapist } from '../../types'
 const shiftIcons: Record<string, typeof Sun> = { manha: Sunrise, tarde: Sun, noite: Moon, flexivel: Sun }
 const shiftLabels: Record<string, string> = { manha: 'Manhã', tarde: 'Tarde', noite: 'Noite', flexivel: 'Flexível' }
 
+const APPROACHES = [
+  'TCC', 'Psicanálise', 'Gestalt', 'Humanista', 'Sistêmica', 'Comportamental',
+  'Cognitiva', 'Integrativa', 'Existencial', 'Analítica', 'EMDR', 'DBT', 'Outra',
+]
+
+const SPECIALTIES = [
+  'Ansiedade', 'Depressão', 'Autoestima', 'Relacionamentos', 'Luto', 'Traumas',
+  'Burnout', 'TOC', 'Pânico', 'Fobia', 'TEPT', 'Autoconhecimento', 'Estresse',
+  'Vícios', 'Sexualidade', 'Identidade de gênero', 'Família', 'Carreira',
+]
+
 export function TherapistProfile() {
   const [t, setTherapist] = useState<Therapist | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [togglingStatus, setTogglingStatus] = useState(false)
-  const [form, setForm] = useState({ name: '', phone: '', email: '', approach: '', specialties: '' })
+  const [form, setForm] = useState({
+    name: '', phone: '', email: '',
+    approach: '',
+    specialties: [] as string[],
+  })
 
   useEffect(() => {
     async function load() {
@@ -26,7 +41,7 @@ export function TherapistProfile() {
           phone: data.phone || '',
           email: data.email || '',
           approach: data.approach || '',
-          specialties: (data.specialties || []).join(', '),
+          specialties: data.specialties || [],
         })
       } catch (err) {
         console.error('Load error:', err)
@@ -37,13 +52,19 @@ export function TherapistProfile() {
     load()
   }, [])
 
+  function toggleSpecialty(s: string) {
+    setForm(f => ({
+      ...f,
+      specialties: f.specialties.includes(s)
+        ? f.specialties.filter(x => x !== s)
+        : [...f.specialties, s],
+    }))
+  }
+
   async function handleSave() {
     setSaving(true)
     try {
-      await api.therapistPortal.updateProfile({
-        ...form,
-        specialties: form.specialties.split(',').map(s => s.trim()).filter(Boolean),
-      })
+      await api.therapistPortal.updateProfile(form)
       const data = await api.therapistPortal.getProfile()
       setTherapist(data)
       setEditing(false)
@@ -69,7 +90,19 @@ export function TherapistProfile() {
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-1">Portal do Terapeuta</p>
           <h1 className="text-2xl font-bold text-gray-100 tracking-tight">Meu Perfil</h1>
         </div>
-        <button onClick={() => setEditing(!editing)}
+        <button
+          onClick={() => {
+            if (editing && t) {
+              setForm({
+                name: t.name,
+                phone: t.phone || '',
+                email: t.email || '',
+                approach: t.approach || '',
+                specialties: t.specialties || [],
+              })
+            }
+            setEditing(!editing)
+          }}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             editing ? 'bg-orange-500 text-white hover:bg-orange-400' : 'bg-white/5 text-gray-400 hover:bg-white/10 border border-white/10'
           }`}>
@@ -128,6 +161,7 @@ export function TherapistProfile() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Dados pessoais */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -153,19 +187,6 @@ export function TherapistProfile() {
                   <input value={form.email} onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
                     className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-gray-300 outline-none focus:border-orange-500/40" />
                 </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1.5">Abordagem terapêutica</label>
-                  <input value={form.approach} onChange={(e) => setForm(f => ({ ...f, approach: e.target.value }))}
-                    placeholder="Ex: Terapia Cognitivo-Comportamental"
-                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-gray-300 outline-none focus:border-orange-500/40" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 block mb-1.5">Especialidades</label>
-                  <input value={form.specialties} onChange={(e) => setForm(f => ({ ...f, specialties: e.target.value }))}
-                    placeholder="Ex: ansiedade, depressão, trauma (separadas por vírgula)"
-                    className="w-full px-3 py-2 bg-white/[0.03] border border-white/10 rounded-lg text-sm text-gray-300 outline-none focus:border-orange-500/40" />
-                  <p className="text-xs text-gray-600 mt-1">Separe as especialidades por vírgula</p>
-                </div>
                 <button onClick={handleSave} disabled={saving}
                   className="w-full py-2.5 bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
                   <Save size={14} /> {saving ? 'Salvando...' : 'Salvar alterações'}
@@ -190,42 +211,85 @@ export function TherapistProfile() {
           </CardBody>
         </Card>
 
+        {/* Dados profissionais */}
         <Card>
           <CardHeader>
             <span className="text-sm font-semibold text-gray-200">Dados profissionais</span>
           </CardHeader>
           <CardBody className="space-y-4">
-            <div>
-              <p className="text-xs text-gray-600 mb-1">Abordagem terapêutica</p>
-              <Badge variant="orange">{t.approach}</Badge>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 mb-2">Especialidades</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(t.specialties || []).map(s => <Badge key={s} variant="gray">{s}</Badge>)}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 mb-2">Turnos disponíveis</p>
-              <div className="flex flex-wrap gap-1.5">
-                {(t.shifts || []).map(s => {
-                  const Icon = shiftIcons[s] || Sun
-                  return (
-                    <span key={s} className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300">
-                      <Icon size={11} className="text-gray-500" /> {shiftLabels[s] || s}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 mb-1">Atende</p>
-              <Badge variant="gray">{t.serves_gender === 'todos' ? 'Todos os gêneros' : t.serves_gender === 'F' ? 'Mulheres' : 'Homens'}</Badge>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 mb-1">Membro desde</p>
-              <p className="text-sm text-gray-400">{t.created_at ? new Date(t.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-'}</p>
-            </div>
+            {editing ? (
+              <>
+                {/* Abordagem — seletor de tag */}
+                <div>
+                  <label className="text-xs text-gray-500 block mb-2">Abordagem terapêutica</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {APPROACHES.map(a => (
+                      <button key={a} type="button"
+                        onClick={() => setForm(f => ({ ...f, approach: a }))}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                          form.approach === a
+                            ? 'bg-orange-500 border-orange-500 text-white'
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                        }`}>
+                        {a}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Especialidades — seletor de tags */}
+                <div>
+                  <label className="text-xs text-gray-500 block mb-2">Especialidades</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SPECIALTIES.map(s => (
+                      <button key={s} type="button"
+                        onClick={() => toggleSpecialty(s)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                          form.specialties.includes(s)
+                            ? 'bg-orange-500 border-orange-500 text-white'
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                        }`}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Abordagem terapêutica</p>
+                  <Badge variant="orange">{t.approach}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-2">Especialidades</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(t.specialties || []).map(s => <Badge key={s} variant="gray">{s}</Badge>)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-2">Turnos disponíveis</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(t.shifts || []).map(s => {
+                      const Icon = shiftIcons[s] || Sun
+                      return (
+                        <span key={s} className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-300">
+                          <Icon size={11} className="text-gray-500" /> {shiftLabels[s] || s}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Atende</p>
+                  <Badge variant="gray">{t.serves_gender === 'todos' ? 'Todos os gêneros' : t.serves_gender === 'F' ? 'Mulheres' : 'Homens'}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 mb-1">Membro desde</p>
+                  <p className="text-sm text-gray-400">{t.created_at ? new Date(t.created_at).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-'}</p>
+                </div>
+              </>
+            )}
           </CardBody>
         </Card>
       </div>

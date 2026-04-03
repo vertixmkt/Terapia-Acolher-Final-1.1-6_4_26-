@@ -1,51 +1,28 @@
 import { useState, useEffect } from 'react'
 import {
   Users, UserCheck, GitMerge, AlertTriangle,
-  TrendingUp, Zap, ShoppingBag, Play, Loader2
+  TrendingUp, ShoppingBag, Loader2
 } from 'lucide-react'
 import { StatCard } from '../../components/ui/StatCard'
-import { Card, CardHeader, CardBody } from '../../components/ui/Card'
+import { Card, CardHeader } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
 import { api } from '../../api/client'
 import type { DashboardStats, MatchingDecision, KiwifyPurchase } from '../../types'
-
-function ModeButton({ mode, current, onClick }: { mode: string; current: string; onClick: () => void }) {
-  const active = mode === current
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
-        active ? 'bg-orange-500 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'
-      }`}
-    >
-      {mode.charAt(0).toUpperCase() + mode.slice(1)}
-    </button>
-  )
-}
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [matchingLog, setMatchingLog] = useState<MatchingDecision[]>([])
   const [purchases, setPurchases] = useState<KiwifyPurchase[]>([])
-  const [matchingWeights, setMatchingWeights] = useState({ gender: 90, shift: 85, specialty: 70 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function load() {
       try {
-        const [s, log, purch, mode] = await Promise.all([
+        const [s, log, purch] = await Promise.all([
           api.dashboard.stats(),
           api.matching.log().catch(() => []),
           api.webhooks.kiwify.list().catch(() => []),
-          api.matching.getMode().catch(() => null),
         ])
-        if (mode) {
-          setMatchingWeights({
-            gender: mode.weight_gender ?? 90,
-            shift: mode.weight_shift ?? 85,
-            specialty: mode.weight_specialty ?? 70,
-          })
-        }
         setStats(s)
         setMatchingLog(log)
         setPurchases(purch.slice(0, 5).map((p: any) => ({
@@ -66,15 +43,6 @@ export function AdminDashboard() {
     }
     load()
   }, [])
-
-  async function handleSetMode(mode: string) {
-    try {
-      await api.matching.setMode(mode)
-      setStats(prev => prev ? { ...prev, match_mode: mode as DashboardStats['match_mode'] } : prev)
-    } catch (err) {
-      console.error('Set mode error:', err)
-    }
-  }
 
   async function handleRunMatching() {
     try {
@@ -128,47 +96,7 @@ export function AdminDashboard() {
           trend={{ value: 'com 2 creditos ou menos', positive: false }} accent="red" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Zap size={15} className="text-orange-400" />
-              <span className="text-sm font-semibold text-gray-200">Controle de Matching</span>
-            </div>
-          </CardHeader>
-          <CardBody className="space-y-4">
-            <div className="flex gap-2">
-              <ModeButton mode="auto" current={stats.match_mode} onClick={() => handleSetMode('auto')} />
-              <ModeButton mode="manual" current={stats.match_mode} onClick={() => handleSetMode('manual')} />
-              <ModeButton mode="pausado" current={stats.match_mode} onClick={() => handleSetMode('pausado')} />
-            </div>
-            <div className="space-y-3 pt-1">
-              {[
-                { label: 'Gênero', weight: matchingWeights.gender },
-                { label: 'Turno', weight: matchingWeights.shift },
-                { label: 'Abordagem (IA)', weight: matchingWeights.specialty },
-              ].map(({ label, weight }) => (
-                <div key={label}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-gray-400">{label}</span>
-                    <span className="text-gray-500">{weight}%</span>
-                  </div>
-                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-orange-500/60 rounded-full" style={{ width: `${weight}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={handleRunMatching}
-              className="w-full py-2 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded-lg text-sm font-medium hover:bg-orange-500/20 transition-colors flex items-center justify-center gap-2"
-            >
-              <Play size={14} />
-              Executar matching manual
-            </button>
-          </CardBody>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-4">
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">

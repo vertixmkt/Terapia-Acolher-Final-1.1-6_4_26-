@@ -64,11 +64,19 @@ function Landing() {
   )
 }
 
+function subdomainTarget(): string | null {
+  const host = window.location.hostname
+  if (host.startsWith('admin.')) return '/admin'
+  if (host.startsWith('terapeuta.')) return '/terapeuta'
+  return null
+}
+
 export default function App() {
+  const target = subdomainTarget()
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={target ? <Navigate to={target} replace /> : <Landing />} />
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />

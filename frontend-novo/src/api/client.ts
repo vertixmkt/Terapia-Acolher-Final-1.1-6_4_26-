@@ -7,7 +7,7 @@
  * Nenhum segredo é armazenado em variáveis de ambiente do frontend.
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 const ADMIN_TOKEN_KEY = 'admin_jwt'
 const THERAPIST_TOKEN_KEY = 'therapist_token'
@@ -194,11 +194,15 @@ export const api = {
   // ─── Portal do Terapeuta ─────────────────────────────────────────────────────
 
   therapistPortal: {
-    login: (credential: string) =>
-      request<{ token: string; therapist: { id: number; name: string; status: string } }>('/api/therapist/login', {
+    login: (credential: string, password?: string) =>
+      request<{ token: string; needs_password: boolean; needs_onboarding: boolean; therapist: { id: number; name: string; status: string } }>('/api/therapist/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential }),
+        body: JSON.stringify({ credential, password }),
+      }),
+    setPassword: (password: string) =>
+      request<{ success: boolean }>('/api/therapist/me/password', {
+        method: 'POST', headers: therapistHeaders(), body: JSON.stringify({ password }),
       }),
     getProfile: () =>
       request<any>('/api/therapist/me', { headers: therapistHeaders() }),

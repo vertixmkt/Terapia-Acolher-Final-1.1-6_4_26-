@@ -126,7 +126,7 @@ function TherapistModal({
               onClick={() => setForm(f => ({ ...f, has_formation: !f.has_formation }))}
               className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 ${form.has_formation ? 'bg-orange-500' : 'bg-white/10'}`}
             >
-              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.has_formation ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${form.has_formation ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
             </button>
           </div>
 

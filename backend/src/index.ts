@@ -8,7 +8,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET deve ter no mínimo 32 caracteres'),
   ADMIN_PASSWORD: z.string().min(8, 'ADMIN_PASSWORD deve ter no mínimo 8 caracteres'),
-  FRONTEND_URL: z.string().url('FRONTEND_URL deve ser uma URL válida'),
+  FRONTEND_URL: z.string().min(1, 'FRONTEND_URL é obrigatório'),
   PORT: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
   KIWIFY_WEBHOOK_TOKEN: z.string().optional(),
@@ -76,8 +76,18 @@ app.use(helmet({
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
+const allowedOrigins = (process.env.FRONTEND_URL ?? '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean)
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: (origin, callback) => {
+    // Permitir requests sem origin (ex: curl, Postman, webhooks server-side)
+    if (!origin) return callback(null, true)
+    if (allowedOrigins.includes(origin)) return callback(null, true)
+    callback(new Error(`CORS: origem não permitida — ${origin}`))
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-therapist-token', 'x-request-id'],

@@ -12,6 +12,7 @@ export const therapists = mysqlTable('therapists', {
   email: varchar('email', { length: 320 }),
   phone: varchar('phone', { length: 20 }),
   whatsapp: varchar('whatsapp', { length: 20 }).notNull(),
+  password_hash: varchar('password_hash', { length: 255 }),
   gender: mysqlEnum('gender', ['M', 'F', 'NB']).notNull(),
   approach: varchar('approach', { length: 255 }).notNull(),
   specialties: json('specialties').$type<string[]>().default([]),
