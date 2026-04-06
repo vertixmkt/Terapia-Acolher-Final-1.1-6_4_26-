@@ -234,6 +234,30 @@ export const leadReplenishments = mysqlTable('lead_replenishments', {
   resolved_at: timestamp('resolved_at'),
 })
 
+// ─── Admin Users ─────────────────────────────────────────────────────────────
+
+export const adminUsers = mysqlTable('admin_users', {
+  id: int('id').primaryKey().autoincrement(),
+  email: varchar('email', { length: 320 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
+  password_hash: varchar('password_hash', { length: 255 }),
+  role: mysqlEnum('role', ['super_admin', 'operator']).default('operator'),
+  status: mysqlEnum('status', ['ativo', 'inativo']).default('ativo'),
+  created_at: timestamp('created_at').defaultNow(),
+  updated_at: timestamp('updated_at').defaultNow().onUpdateNow(),
+})
+
+// ─── Admin Password Reset Tokens ─────────────────────────────────────────────
+
+export const adminResetTokens = mysqlTable('admin_reset_tokens', {
+  id: int('id').primaryKey().autoincrement(),
+  admin_id: int('admin_id').notNull(),
+  token: varchar('token', { length: 64 }).notNull().unique(),
+  expires_at: timestamp('expires_at').notNull(),
+  used: boolean('used').default(false),
+  created_at: timestamp('created_at').defaultNow(),
+})
+
 // ─── Password Reset Tokens ───────────────────────────────────────────────────
 
 export const passwordResetTokens = mysqlTable('password_reset_tokens', {

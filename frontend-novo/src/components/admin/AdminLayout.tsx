@@ -8,42 +8,59 @@ import {
 import { AdminLoginScreen } from './AdminLoginScreen'
 
 const ADMIN_TOKEN_KEY = 'admin_jwt'
+const ADMIN_INFO_KEY = 'admin_info'
 
-const nav = [
-  { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/admin/autorizacao', label: 'Autorizacao', icon: ClipboardCheck },
-  { to: '/admin/cadastro-rapido', label: 'Cadastro Rapido', icon: Zap },
-  { to: '/admin/pacientes', label: 'Pacientes', icon: Users },
-  { to: '/admin/terapeutas', label: 'Terapeutas', icon: UserCheck },
-  { to: '/admin/atribuicoes', label: 'Atribuicoes', icon: GitMerge },
-  { to: '/admin/matching', label: 'Matching', icon: Heart },
-  { to: '/admin/webhooks-recebidos', label: 'MC Recebidos', icon: MessageSquare },
-  { to: '/admin/webhooks-enviados', label: 'MC Enviados', icon: Send },
-  { to: '/admin/compras', label: 'Compras Kiwify', icon: ShoppingBag },
-  { to: '/admin/config', label: 'Configuracoes', icon: Settings },
-]
+function isAdminSubdomain() {
+  return window.location.hostname.startsWith('admin.')
+}
+
+function getNav() {
+  const base = isAdminSubdomain() ? '' : '/admin'
+  return [
+    { to: base || '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    { to: `${base}/autorizacao`, label: 'Autorizacao', icon: ClipboardCheck },
+    { to: `${base}/cadastro-rapido`, label: 'Cadastro Rapido', icon: Zap },
+    { to: `${base}/pacientes`, label: 'Pacientes', icon: Users },
+    { to: `${base}/terapeutas`, label: 'Terapeutas', icon: UserCheck },
+    { to: `${base}/atribuicoes`, label: 'Atribuicoes', icon: GitMerge },
+    { to: `${base}/matching`, label: 'Matching', icon: Heart },
+    { to: `${base}/webhooks-recebidos`, label: 'MC Recebidos', icon: MessageSquare },
+    { to: `${base}/webhooks-enviados`, label: 'MC Enviados', icon: Send },
+    { to: `${base}/compras`, label: 'Compras Kiwify', icon: ShoppingBag },
+    { to: `${base}/config`, label: 'Configuracoes', icon: Settings },
+  ]
+}
+
+// Nav agora é dinâmico via getNav() — suporta subdomínio
 
 export function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [desktopCollapsed, setDesktopCollapsed] = useState(false)
   const [authed, setAuthed] = useState(false)
   const [checking, setChecking] = useState(true)
+  const [adminInfo, setAdminInfo] = useState<{ name: string; email: string; role: string } | null>(null)
 
   useEffect(() => {
     const stored = sessionStorage.getItem(ADMIN_TOKEN_KEY)
+    const info = sessionStorage.getItem(ADMIN_INFO_KEY)
     if (stored) {
       setAuthed(true)
+      if (info) try { setAdminInfo(JSON.parse(info)) } catch {}
     }
     setChecking(false)
   }, [])
 
-  function handleLogin(token: string) {
+  function handleLogin(token: string, admin: { name: string; email: string; role: string }) {
     sessionStorage.setItem(ADMIN_TOKEN_KEY, token)
+    sessionStorage.setItem(ADMIN_INFO_KEY, JSON.stringify(admin))
+    setAdminInfo(admin)
     setAuthed(true)
   }
 
   function handleLogout() {
     sessionStorage.removeItem(ADMIN_TOKEN_KEY)
+    sessionStorage.removeItem(ADMIN_INFO_KEY)
+    setAdminInfo(null)
     setAuthed(false)
   }
 
@@ -84,7 +101,7 @@ export function AdminLayout() {
           </button>
         </div>
         <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
-          {nav.map(({ to, label, icon: Icon, end }) => (
+          {getNav().map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -120,7 +137,7 @@ export function AdminLayout() {
         </div>
 
         <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto">
-          {nav.map(({ to, label, icon: Icon, end }) => (
+          {getNav().map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -156,9 +173,9 @@ export function AdminLayout() {
           </button>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-600 uppercase tracking-widest hidden sm:block">Admin</span>
+            <span className="text-xs text-gray-600 hidden sm:block">{adminInfo?.name || 'Admin'}</span>
             <div className="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center">
-              <span className="text-xs text-orange-400 font-bold">A</span>
+              <span className="text-xs text-orange-400 font-bold">{adminInfo?.name?.charAt(0)?.toUpperCase() || 'A'}</span>
             </div>
             <button
               onClick={handleLogout}

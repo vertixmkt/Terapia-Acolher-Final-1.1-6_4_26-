@@ -5,6 +5,9 @@ declare global {
     interface Request {
       therapistId?: number
       requestId?: string
+      adminRole?: string
+      adminEmail?: string
+      adminName?: string
     }
   }
 }

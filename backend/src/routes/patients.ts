@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { getDb } from '../db/index.js'
 import { patients } from '../db/schema.js'
 import { eq, like, or, desc, and } from 'drizzle-orm'
-import { adminAuth } from '../middleware/auth.js'
+import { adminAuth, requireRole } from '../middleware/auth.js'
 import { runAutoMatching } from '../services/matching.js'
 import { logger } from '../lib/logger.js'
 
@@ -86,7 +86,7 @@ patientsRouter.get('/:id', async (req, res) => {
 })
 
 // POST /api/patients — criar manualmente (admin)
-patientsRouter.post('/', async (req, res) => {
+patientsRouter.post('/', requireRole('super_admin'), async (req, res) => {
   try {
     const parsed = patientSchema.safeParse(req.body)
     if (!parsed.success) {
@@ -137,8 +137,8 @@ patientsRouter.put('/:id', async (req, res) => {
   }
 })
 
-// PATCH /api/patients/:id/archive
-patientsRouter.patch('/:id/archive', async (req, res) => {
+// PATCH /api/patients/:id/archive (super_admin only)
+patientsRouter.patch('/:id/archive', requireRole('super_admin'), async (req, res) => {
   try {
     const id = parseInt(req.params.id)
     if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }

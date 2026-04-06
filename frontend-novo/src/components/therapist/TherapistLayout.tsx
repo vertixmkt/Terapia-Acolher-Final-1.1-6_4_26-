@@ -4,20 +4,28 @@ import { User, GitMerge, Wallet, Heart, LogOut, Loader2 } from 'lucide-react'
 import { api } from '../../api/client'
 import { THERAPIST_TOKEN_KEY, ONBOARDING_KEY } from '../../constants/therapist'
 import { LoginScreen } from './LoginScreen'
+import { RegisterScreen } from './RegisterScreen'
 import { SetPasswordScreen } from './SetPasswordScreen'
 import { OnboardingScreen } from './OnboardingScreen'
 import { ForgotPasswordScreen } from './ForgotPasswordScreen'
 
-const nav = [
-  { to: '/terapeuta', label: 'Meu Perfil', icon: User, end: true },
-  { to: '/terapeuta/atribuicoes', label: 'Atribuições', icon: GitMerge },
-  { to: '/terapeuta/saldo', label: 'Meu Saldo', icon: Wallet },
-]
+function isTherapistSubdomain() {
+  return window.location.hostname.startsWith('terapeuta.')
+}
+
+function getNav() {
+  const base = isTherapistSubdomain() ? '' : '/terapeuta'
+  return [
+    { to: base || '/', label: 'Meu Perfil', icon: User, end: true },
+    { to: `${base}/atribuicoes`, label: 'Atribuições', icon: GitMerge },
+    { to: `${base}/saldo`, label: 'Meu Saldo', icon: Wallet },
+  ]
+}
 
 export function TherapistLayout() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [authed, setAuthed] = useState(false)
-  const [step, setStep] = useState<'login' | 'forgot-password' | 'set-password' | 'onboarding' | 'portal'>('login')
+  const [step, setStep] = useState<'login' | 'register' | 'forgot-password' | 'set-password' | 'onboarding' | 'portal'>('login')
   const [checking, setChecking] = useState(true)
   const [therapistName, setTherapistName] = useState('')
 
@@ -74,7 +82,11 @@ export function TherapistLayout() {
   }
 
   if (!authed || step === 'login') {
-    return <LoginScreen onLogin={handleLoginSuccess} onForgotPassword={() => setStep('forgot-password')} />
+    return <LoginScreen onLogin={handleLoginSuccess} onForgotPassword={() => setStep('forgot-password')} onRegister={() => setStep('register')} />
+  }
+
+  if (step === 'register') {
+    return <RegisterScreen onBack={() => setStep('login')} />
   }
 
   if (step === 'forgot-password') {
@@ -128,7 +140,7 @@ export function TherapistLayout() {
       <div className="border-b border-white/5 sticky top-0 z-10" style={{ background: '#0d0e1a' }}>
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex">
-            {nav.map(({ to, label, icon: Icon, end }) => (
+            {getNav().map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}

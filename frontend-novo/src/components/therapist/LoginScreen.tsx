@@ -3,7 +3,7 @@ import { Loader2, Mail, Phone, Lock, Eye, EyeOff, Heart } from 'lucide-react'
 import { api } from '../../api/client'
 import { THERAPIST_TOKEN_KEY } from '../../constants/therapist'
 
-export function LoginScreen({ onLogin, onForgotPassword }: { onLogin: (token: string, needsPassword: boolean, needsOnboarding: boolean) => void; onForgotPassword: () => void }) {
+export function LoginScreen({ onLogin, onForgotPassword, onRegister }: { onLogin: (token: string, needsPassword: boolean, needsOnboarding: boolean) => void; onForgotPassword: () => void; onRegister?: () => void }) {
   const [credential, setCredential] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -108,6 +108,17 @@ export function LoginScreen({ onLogin, onForgotPassword }: { onLogin: (token: st
           <Phone size={12} className="flex-shrink-0 mt-0.5" />
           <p>Use o mesmo e-mail ou WhatsApp que você usou na compra do pacote Kiwify.</p>
         </div>
+
+        {onRegister && (
+          <div className="text-center">
+            <p className="text-xs text-gray-600">
+              Ainda não tem conta?{' '}
+              <button onClick={onRegister} className="text-orange-400 hover:text-orange-300 font-medium transition-colors">
+                Criar cadastro
+              </button>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

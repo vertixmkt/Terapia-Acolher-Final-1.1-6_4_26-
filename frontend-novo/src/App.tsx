@@ -16,6 +16,7 @@ import { TherapistProfile } from './pages/therapist/MyProfile'
 import { TherapistAssignments } from './pages/therapist/MyAssignments'
 import { TherapistBalance } from './pages/therapist/MyBalance'
 import { ResetPassword } from './pages/therapist/ResetPassword'
+import { AdminResetPassword } from './pages/admin/AdminResetPassword'
 import { Heart, ShieldCheck, User } from 'lucide-react'
 
 function Landing() {
@@ -77,30 +78,64 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={target ? <Navigate to={target} replace /> : <Landing />} />
+        {/* Subdomínio terapeuta.* → portal direto na raiz */}
+        {target === '/terapeuta' ? (
+          <>
+            <Route path="/reset-senha" element={<ResetPassword />} />
+            <Route path="/" element={<TherapistLayout />}>
+              <Route index element={<TherapistProfile />} />
+              <Route path="atribuicoes" element={<TherapistAssignments />} />
+              <Route path="saldo" element={<TherapistBalance />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : target === '/admin' ? (
+          <>
+            <Route path="/reset-senha" element={<AdminResetPassword />} />
+            <Route path="/" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="autorizacao" element={<AdminAuthorization />} />
+              <Route path="cadastro-rapido" element={<AdminQuickRegister />} />
+              <Route path="pacientes" element={<AdminPatients />} />
+              <Route path="terapeutas" element={<AdminTherapists />} />
+              <Route path="atribuicoes" element={<AdminAssignments />} />
+              <Route path="matching" element={<AdminMatching />} />
+              <Route path="webhooks-recebidos" element={<AdminWebhooksManychatReceived />} />
+              <Route path="webhooks-enviados" element={<AdminWebhooksManychatSent />} />
+              <Route path="compras" element={<AdminPurchasesKiwify />} />
+              <Route path="config" element={<AdminConfig />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : (
+          <>
+            <Route path="/" element={<Landing />} />
 
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="autorizacao" element={<AdminAuthorization />} />
-          <Route path="cadastro-rapido" element={<AdminQuickRegister />} />
-          <Route path="pacientes" element={<AdminPatients />} />
-          <Route path="terapeutas" element={<AdminTherapists />} />
-          <Route path="atribuicoes" element={<AdminAssignments />} />
-          <Route path="matching" element={<AdminMatching />} />
-          <Route path="webhooks-recebidos" element={<AdminWebhooksManychatReceived />} />
-          <Route path="webhooks-enviados" element={<AdminWebhooksManychatSent />} />
-          <Route path="compras" element={<AdminPurchasesKiwify />} />
-          <Route path="config" element={<AdminConfig />} />
-        </Route>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="autorizacao" element={<AdminAuthorization />} />
+              <Route path="cadastro-rapido" element={<AdminQuickRegister />} />
+              <Route path="pacientes" element={<AdminPatients />} />
+              <Route path="terapeutas" element={<AdminTherapists />} />
+              <Route path="atribuicoes" element={<AdminAssignments />} />
+              <Route path="matching" element={<AdminMatching />} />
+              <Route path="webhooks-recebidos" element={<AdminWebhooksManychatReceived />} />
+              <Route path="webhooks-enviados" element={<AdminWebhooksManychatSent />} />
+              <Route path="compras" element={<AdminPurchasesKiwify />} />
+              <Route path="config" element={<AdminConfig />} />
+            </Route>
 
-        <Route path="/terapeuta/reset-senha" element={<ResetPassword />} />
-        <Route path="/terapeuta" element={<TherapistLayout />}>
-          <Route index element={<TherapistProfile />} />
-          <Route path="atribuicoes" element={<TherapistAssignments />} />
-          <Route path="saldo" element={<TherapistBalance />} />
-        </Route>
+            <Route path="/admin/reset-senha" element={<AdminResetPassword />} />
+            <Route path="/terapeuta/reset-senha" element={<ResetPassword />} />
+            <Route path="/terapeuta" element={<TherapistLayout />}>
+              <Route index element={<TherapistProfile />} />
+              <Route path="atribuicoes" element={<TherapistAssignments />} />
+              <Route path="saldo" element={<TherapistBalance />} />
+            </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
       </Routes>
     </BrowserRouter>
   )

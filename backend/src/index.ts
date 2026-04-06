@@ -7,7 +7,7 @@ import { z } from 'zod'
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET deve ter no mínimo 32 caracteres'),
-  ADMIN_PASSWORD: z.string().min(8, 'ADMIN_PASSWORD deve ter no mínimo 8 caracteres'),
+  ADMIN_PASSWORD: z.string().optional(), // legacy — cada admin agora tem sua senha
   FRONTEND_URL: z.string().min(1, 'FRONTEND_URL é obrigatório'),
   PORT: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
@@ -41,6 +41,7 @@ import { webhooksKiwifyRouter } from './routes/webhooks-kiwify.js'
 import { webhooksManychatRouter } from './routes/webhooks-manychat.js'
 import { therapistPortalRouter } from './routes/therapist-portal.js'
 import { manychatConfigRouter } from './routes/manychat-config.js'
+import { seedAdmins } from './db/seed-admins.js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -119,7 +120,7 @@ app.use((req, res, next) => {
 
 // ─── Body parsers ─────────────────────────────────────────────────────────────
 
-app.use(express.json({ limit: '2mb' }))
+app.use(express.json({ limit: '5mb' }))
 app.use(express.urlencoded({ extended: true, limit: '2mb' }))
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -168,6 +169,86 @@ app.get('/health', async (_req, res) => {
   }
 })
 
+// ─── Sync Manus (uso interno via cron) ────────────────────────────────────
+
+app.post('/api/internal/sync-manus', async (req, res) => {
+  try {
+    const secret = req.headers['x-admin-secret']
+    if (secret !== process.env.ADMIN_SECRET) {
+      res.status(401).json({ error: 'Não autorizado' })
+      return
+    }
+
+    // O body vem no formato tRPC: [{ result: { data: { json: [...] } } }]
+    const items = req.body?.[0]?.result?.data?.json
+    if (!Array.isArray(items) || items.length === 0) {
+      res.status(400).json({ error: 'Dados inválidos' })
+      return
+    }
+
+    const db = await getDb()
+    const { therapists } = await import('./db/schema.js')
+    const { eq } = await import('drizzle-orm')
+
+    let imported = 0
+    let skipped = 0
+
+    for (const t of items) {
+      if (!t.whatsapp) { skipped++; continue }
+
+      const [existing] = await db
+        .select({ id: therapists.id })
+        .from(therapists)
+        .where(eq(therapists.whatsapp, t.whatsapp))
+
+      if (existing) { skipped++; continue }
+
+      const genderMap: Record<string, string> = { homem: 'M', mulher: 'F', nao_binario: 'NB' }
+      const gender = genderMap[t.genero] || 'F'
+
+      let servesGender: 'M' | 'F' | 'NB' | 'todos' = 'todos'
+      if (t.atendeHomens === 'sim' && t.atendeMulheres !== 'sim') servesGender = 'M'
+      else if (t.atendeMulheres === 'sim' && t.atendeHomens !== 'sim') servesGender = 'F'
+
+      let shifts: string[] = ['manha']
+      try {
+        const parsed = typeof t.turnosAtendimento === 'string'
+          ? JSON.parse(t.turnosAtendimento) : t.turnosAtendimento
+        if (Array.isArray(parsed) && parsed.length > 0) shifts = parsed
+      } catch {}
+
+      const hasProfile = t.abordagem && t.abordagem.trim().length >= 2
+      const status = t.status === 'ativo' && hasProfile ? 'ativo' : 'pendente'
+
+      await db.insert(therapists).values({
+        name: (t.nome || '').trim(),
+        email: t.email || null,
+        whatsapp: t.whatsapp,
+        gender: gender as any,
+        approach: t.abordagem || '',
+        specialties: [],
+        serves_gender: servesGender,
+        serves_children: t.atendeInfantil === 'sim',
+        serves_teens: t.atendeAdolescentes === 'sim',
+        serves_elderly: t.atendeIdosos === 'sim',
+        serves_lgbt: t.atendeLgbt === 'sim',
+        serves_couples: t.atendeCasais === 'sim',
+        shifts,
+        status: status as any,
+        balance: t.saldoLeads ?? 0,
+        manychat_subscriber_id: t.manychatSubscriberId || null,
+      })
+      imported++
+    }
+
+    logger.info({ imported, skipped }, '[Sync/Manus] Sync concluído')
+    res.json({ imported, skipped, total: items.length })
+  } catch (error: any) {
+    logger.error({ error }, '[Sync/Manus] Erro')
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // ─── 404 handler ──────────────────────────────────────────────────────────────
 
 app.use((req, res) => {
@@ -183,6 +264,8 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
   res.status(500).json({ error: message })
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   logger.info({ port: PORT, env: process.env.NODE_ENV }, '✅ Backend Terapia Acolher iniciado')
+  // Seed dos admins padrão (cria se não existem)
+  await seedAdmins()
 })

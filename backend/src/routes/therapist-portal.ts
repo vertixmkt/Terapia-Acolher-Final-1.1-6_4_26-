@@ -376,9 +376,11 @@ therapistPortalRouter.post('/forgot-password', async (req, res) => {
       expires_at: expiresAt,
     })
 
-    // Montar link de reset
-    const frontendUrl = (process.env.FRONTEND_URL ?? '').split(',')[0].trim()
-    const resetLink = `${frontendUrl}/terapeuta/reset-senha?token=${token}`
+    // Montar link de reset — usar subdomínio terapeuta se disponível
+    const allUrls = (process.env.FRONTEND_URL ?? '').split(',').map(u => u.trim())
+    const therapistUrl = allUrls.find(u => u.includes('terapeuta.')) || allUrls[0] || ''
+    const resetPath = therapistUrl.includes('terapeuta.') ? '/reset-senha' : '/terapeuta/reset-senha'
+    const resetLink = `${therapistUrl}${resetPath}?token=${token}`
 
     await sendPasswordResetEmail(therapist.email, therapist.name, resetLink)
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, Check, MessageCircle, ShieldCheck, Loader2, GraduationCap } from 'lucide-react'
+import { X, Check, MessageCircle, ShieldCheck, GraduationCap } from 'lucide-react'
 import { api } from '../../api/client'
 import type { Therapist } from '../../types'
 

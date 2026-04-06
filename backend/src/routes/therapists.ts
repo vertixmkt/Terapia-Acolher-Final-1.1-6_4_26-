@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { getDb } from '../db/index.js'
 import { therapists, webhooksKiwify } from '../db/schema.js'
 import { eq, like, or, desc, and } from 'drizzle-orm'
-import { adminAuth } from '../middleware/auth.js'
+import { adminAuth, requireRole } from '../middleware/auth.js'
 import { matchPendingPatients } from '../services/matching.js'
 import { logger } from '../lib/logger.js'
 
@@ -48,9 +48,22 @@ therapistsRouter.post('/register', async (req, res) => {
     const data = registerSchema.parse(req.body)
     const db = await getDb()
 
+    // Auto-aprovação: se perfil completo, já entra como ativo
+    const profileComplete = (
+      data.approach && data.approach.trim().length >= 2 &&
+      Array.isArray(data.specialties) && data.specialties.length > 0 &&
+      Array.isArray(data.shifts) && data.shifts.length > 0 &&
+      data.serves_gender
+    )
+    const initialStatus = profileComplete ? 'ativo' : 'pendente'
+
+    if (profileComplete) {
+      logger.info({ name: data.name }, '[Therapists/Register] Perfil completo — aprovado automaticamente')
+    }
+
     const result = await db.insert(therapists).values({
       ...data,
-      status: 'pendente',
+      status: initialStatus,
       balance: 0,
     })
 
@@ -90,7 +103,7 @@ therapistsRouter.post('/register', async (req, res) => {
       }
     }
 
-    if (leadsGranted > 0) {
+    if (initialStatus === 'ativo' || leadsGranted > 0) {
       matchPendingPatients().catch(err =>
         logger.error({ error: err }, '[Therapists/Register] Erro no matching automático')
       )
@@ -98,9 +111,12 @@ therapistsRouter.post('/register', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Cadastro realizado! Aguarde aprovação.',
+      message: profileComplete
+        ? 'Cadastro aprovado! Você já está na fila de atendimento.'
+        : 'Cadastro realizado! Complete seu perfil para entrar na fila.',
       therapist_id: therapistId,
       leads_granted: leadsGranted,
+      auto_approved: profileComplete,
     })
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -169,8 +185,8 @@ therapistsRouter.get('/:id', async (req, res) => {
   }
 })
 
-// POST /api/therapists — criar (admin)
-therapistsRouter.post('/', async (req, res) => {
+// POST /api/therapists — criar (admin, super_admin only)
+therapistsRouter.post('/', requireRole('super_admin'), async (req, res) => {
   try {
     const parsed = adminCreateSchema.safeParse(req.body)
     if (!parsed.success) {
@@ -242,8 +258,8 @@ therapistsRouter.patch('/:id/authorize', async (req, res) => {
   }
 })
 
-// DELETE /api/therapists/:id — desativar (soft)
-therapistsRouter.delete('/:id', async (req, res) => {
+// DELETE /api/therapists/:id — desativar (soft, super_admin only)
+therapistsRouter.delete('/:id', requireRole('super_admin'), async (req, res) => {
   try {
     const id = parseInt(req.params.id)
     if (isNaN(id)) { res.status(400).json({ error: 'ID inválido' }); return }
