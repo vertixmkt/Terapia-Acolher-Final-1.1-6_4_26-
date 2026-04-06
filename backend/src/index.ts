@@ -12,6 +12,7 @@ const envSchema = z.object({
   PORT: z.string().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).optional(),
   KIWIFY_WEBHOOK_TOKEN: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).optional(),
 })
 
@@ -150,7 +151,9 @@ app.use('/api/manychat', adminLimiter, manychatConfigRouter)
 
 // ─── Portal do terapeuta ──────────────────────────────────────────────────────
 
-app.use('/api/therapist/login', authLimiter, therapistPortalRouter)
+app.use('/api/therapist/login', authLimiter)
+app.use('/api/therapist/forgot-password', authLimiter)
+app.use('/api/therapist/reset-password', authLimiter)
 app.use('/api/therapist', therapistPortalRouter)
 
 // ─── Health check (com ping real no banco) ────────────────────────────────────

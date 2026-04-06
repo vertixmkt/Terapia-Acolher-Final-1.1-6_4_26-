@@ -218,5 +218,17 @@ export const api = {
       request<any>('/api/therapist/me/replenishment', {
         method: 'POST', headers: therapistHeaders(), body: JSON.stringify(data),
       }),
+    forgotPassword: (credential: string) =>
+      request<{ success: boolean; message: string }>('/api/therapist/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential }),
+      }),
+    resetPassword: (token: string, password: string) =>
+      request<{ success: boolean; message: string }>('/api/therapist/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      }),
   },
 }

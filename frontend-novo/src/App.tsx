@@ -15,6 +15,7 @@ import { AdminConfig } from './pages/admin/Config'
 import { TherapistProfile } from './pages/therapist/MyProfile'
 import { TherapistAssignments } from './pages/therapist/MyAssignments'
 import { TherapistBalance } from './pages/therapist/MyBalance'
+import { ResetPassword } from './pages/therapist/ResetPassword'
 import { Heart, ShieldCheck, User } from 'lucide-react'
 
 function Landing() {
@@ -92,6 +93,7 @@ export default function App() {
           <Route path="config" element={<AdminConfig />} />
         </Route>
 
+        <Route path="/terapeuta/reset-senha" element={<ResetPassword />} />
         <Route path="/terapeuta" element={<TherapistLayout />}>
           <Route index element={<TherapistProfile />} />
           <Route path="atribuicoes" element={<TherapistAssignments />} />

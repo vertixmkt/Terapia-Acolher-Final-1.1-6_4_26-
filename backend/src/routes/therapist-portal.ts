@@ -7,10 +7,11 @@ import { z } from 'zod'
 import { scrypt, randomBytes, timingSafeEqual } from 'crypto'
 import { promisify } from 'util'
 import { getDb } from '../db/index.js'
-import { therapists, assignments, patients, webhooksKiwify, leadReplenishments } from '../db/schema.js'
-import { eq, desc, or } from 'drizzle-orm'
+import { therapists, assignments, patients, webhooksKiwify, leadReplenishments, passwordResetTokens } from '../db/schema.js'
+import { eq, desc, or, and, gt } from 'drizzle-orm'
 import { therapistAuth, generateTherapistToken, adminAuth } from '../middleware/auth.js'
 import { logger } from '../lib/logger.js'
+import { sendPasswordResetEmail } from '../services/email.js'
 
 const scryptAsync = promisify(scrypt)
 
@@ -58,6 +59,15 @@ const replenishmentSchema = z.object({
   contacted_24h: z.boolean().default(false),
   contacted_72h: z.boolean().default(false),
   contacted_15d: z.boolean().default(false),
+})
+
+const forgotPasswordSchema = z.object({
+  credential: z.string().min(3, 'Informe seu e-mail ou WhatsApp'),
+})
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token obrigatório'),
+  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres'),
 })
 
 // POST /api/therapist/login — login via email ou WhatsApp (público, sem auth)
@@ -317,6 +327,110 @@ therapistPortalRouter.post('/me/replenishment', therapistAuth, async (req, res) 
     })
   } catch (error) {
     res.status(500).json({ error: 'Erro ao solicitar reposição' })
+  }
+})
+
+// ─── Recuperação de senha ────────────────────────────────────────────────────
+
+// POST /api/therapist/forgot-password — solicitar reset de senha (público, sem auth)
+therapistPortalRouter.post('/forgot-password', async (req, res) => {
+  try {
+    const parsed = forgotPasswordSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.errors[0]?.message })
+      return
+    }
+
+    const db = await getDb()
+    const clean = parsed.data.credential.trim()
+    const cleanDigits = clean.replace(/\D/g, '')
+
+    const conditions = [eq(therapists.email, clean)]
+    if (cleanDigits.length >= 10) {
+      conditions.push(eq(therapists.whatsapp, cleanDigits))
+      conditions.push(eq(therapists.whatsapp, clean))
+      conditions.push(eq(therapists.phone, cleanDigits))
+      conditions.push(eq(therapists.phone, clean))
+    }
+
+    const [therapist] = await db
+      .select()
+      .from(therapists)
+      .where(or(...conditions))
+      .limit(1)
+
+    // Sempre retorna sucesso (não revela se o email existe)
+    if (!therapist || !therapist.email) {
+      logger.info({ credential: clean }, '[ForgotPassword] Terapeuta não encontrado ou sem email')
+      res.json({ success: true, message: 'Se o e-mail estiver cadastrado, você receberá um link de redefinição.' })
+      return
+    }
+
+    // Gerar token seguro
+    const token = randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hora
+
+    await db.insert(passwordResetTokens).values({
+      therapist_id: therapist.id,
+      token,
+      expires_at: expiresAt,
+    })
+
+    // Montar link de reset
+    const frontendUrl = (process.env.FRONTEND_URL ?? '').split(',')[0].trim()
+    const resetLink = `${frontendUrl}/terapeuta/reset-senha?token=${token}`
+
+    await sendPasswordResetEmail(therapist.email, therapist.name, resetLink)
+
+    logger.info({ therapistId: therapist.id }, '[ForgotPassword] Token gerado e email enviado')
+    res.json({ success: true, message: 'Se o e-mail estiver cadastrado, você receberá um link de redefinição.' })
+  } catch (error) {
+    logger.error({ error }, '[ForgotPassword] Erro')
+    res.status(500).json({ error: 'Erro ao processar solicitação' })
+  }
+})
+
+// POST /api/therapist/reset-password — redefinir senha com token (público, sem auth)
+therapistPortalRouter.post('/reset-password', async (req, res) => {
+  try {
+    const parsed = resetPasswordSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.errors[0]?.message })
+      return
+    }
+
+    const db = await getDb()
+
+    // Buscar token válido (não usado, não expirado)
+    const [resetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(
+        and(
+          eq(passwordResetTokens.token, parsed.data.token),
+          eq(passwordResetTokens.used, false),
+          gt(passwordResetTokens.expires_at, new Date()),
+        ),
+      )
+      .limit(1)
+
+    if (!resetToken) {
+      res.status(400).json({ error: 'Link inválido ou expirado. Solicite um novo.' })
+      return
+    }
+
+    // Atualizar senha
+    const hash = await hashPassword(parsed.data.password)
+    await db.update(therapists).set({ password_hash: hash }).where(eq(therapists.id, resetToken.therapist_id))
+
+    // Invalidar token
+    await db.update(passwordResetTokens).set({ used: true }).where(eq(passwordResetTokens.id, resetToken.id))
+
+    logger.info({ therapistId: resetToken.therapist_id }, '[ResetPassword] Senha redefinida com sucesso')
+    res.json({ success: true, message: 'Senha redefinida com sucesso. Faça login com sua nova senha.' })
+  } catch (error) {
+    logger.error({ error }, '[ResetPassword] Erro')
+    res.status(500).json({ error: 'Erro ao redefinir senha' })
   }
 })
 

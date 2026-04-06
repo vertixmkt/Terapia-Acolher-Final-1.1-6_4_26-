@@ -8,16 +8,7 @@ import type { Therapist } from '../../types'
 const shiftIcons: Record<string, typeof Sun> = { manha: Sunrise, tarde: Sun, noite: Moon, flexivel: Sun }
 const shiftLabels: Record<string, string> = { manha: 'Manhã', tarde: 'Tarde', noite: 'Noite', flexivel: 'Flexível' }
 
-const APPROACHES = [
-  'TCC', 'Psicanálise', 'Gestalt', 'Humanista', 'Sistêmica', 'Comportamental',
-  'Cognitiva', 'Integrativa', 'Existencial', 'Analítica', 'EMDR', 'DBT', 'Outra',
-]
-
-const SPECIALTIES = [
-  'Ansiedade', 'Depressão', 'Autoestima', 'Relacionamentos', 'Luto', 'Traumas',
-  'Burnout', 'TOC', 'Pânico', 'Fobia', 'TEPT', 'Autoconhecimento', 'Estresse',
-  'Vícios', 'Sexualidade', 'Identidade de gênero', 'Família', 'Carreira',
-]
+import { APPROACHES, SPECIALTIES } from '../../constants/therapist'
 
 export function TherapistProfile() {
   const [t, setTherapist] = useState<Therapist | null>(null)

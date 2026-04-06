@@ -1,5 +1,5 @@
 # ROADMAP 2.0 — Cérebro Terapia Acolher
-> Documento canônico do estado atual do projeto — atualizado em 03/04/2026
+> Documento canônico do estado atual do projeto — atualizado em 06/04/2026
 
 ---
 
@@ -182,8 +182,10 @@ React 19 + Vite + TailwindCSS 4 + TypeScript strict mode.
 
 ### Componentes
 
-- `AdminLayout` — login screen JWT + sidebar + logout
-- `TherapistLayout` — login screen por e-mail/WhatsApp + nav + logout
+- `AdminLayout` — sidebar + header + logout (login extraído para `AdminLoginScreen`)
+- `TherapistLayout` — orquestrador de steps + header + nav (login/senha/onboarding extraídos para componentes próprios)
+- `TherapistModal` / `PatientModal` — modais de edição extraídos das páginas de listagem
+- `constants/therapist.ts` — constantes compartilhadas (abordagens, especialidades, turnos)
 - `api/client.ts` — API client completo com auto-logout em 401/403
 
 ---
@@ -462,6 +464,80 @@ Novo fluxo de 3 etapas ao primeiro acesso:
 - **CORS multi-origem** — `FRONTEND_URL` agora aceita lista separada por vírgula; backend faz lookup dinâmico
 - **Coluna `has_formation`** adicionada ao banco (migration manual + schema Drizzle atualizado)
 - **Coluna `password_hash`** adicionada ao banco (migration manual + schema Drizzle atualizado)
+
+---
+
+## ✅ Modularização do Frontend (06/04/2026)
+
+Refatoração estrutural sem mudança de funcionalidade. God files quebrados em módulos com responsabilidade única. Build e TypeScript validados sem erros.
+
+### Constantes compartilhadas
+
+| Arquivo | Conteúdo |
+|---|---|
+| `constants/therapist.ts` | `APPROACHES`, `SPECIALTIES`, `SHIFTS`, token keys — fonte única, antes duplicadas em 3 arquivos |
+
+### TherapistLayout — 574 → 137 linhas
+
+| Arquivo extraído | Responsabilidade | Linhas |
+|---|---|---|
+| `components/therapist/LoginScreen.tsx` | Tela de login por e-mail/WhatsApp | ~100 |
+| `components/therapist/SetPasswordScreen.tsx` | Tela de criação de senha | ~90 |
+| `components/therapist/OnboardingScreen.tsx` | Tela de onboarding (abordagem, especialidades, turnos) | ~200 |
+| `components/therapist/TherapistLayout.tsx` | Orquestrador (check token, step machine, header, nav, outlet) | ~137 |
+
+### AdminLayout — 259 → 170 linhas
+
+| Arquivo extraído | Responsabilidade | Linhas |
+|---|---|---|
+| `components/admin/AdminLoginScreen.tsx` | Tela de login admin (senha → JWT) | ~80 |
+| `components/admin/AdminLayout.tsx` | Sidebar + header + logout + outlet | ~170 |
+
+### Modais extraídos das páginas
+
+| Arquivo extraído | Origem | Linhas |
+|---|---|---|
+| `components/admin/TherapistModal.tsx` | `pages/admin/Therapists.tsx` | ~170 |
+| `components/admin/PatientModal.tsx` | `pages/admin/Patients.tsx` | ~200 |
+
+### Páginas simplificadas
+
+| Página | Antes | Depois | Mudança |
+|---|---|---|---|
+| `Therapists.tsx` | 372 | ~186 | Modal extraído para componente |
+| `Patients.tsx` | 378 | ~160 | Modal extraído para componente |
+| `MyProfile.tsx` | 298 | ~290 | Constantes importadas de `constants/therapist.ts` |
+
+### Estrutura resultante
+
+```
+frontend-novo/src/
+├── constants/
+│   └── therapist.ts                    ← NOVO
+├── components/
+│   ├── ui/
+│   │   ├── Badge.tsx
+│   │   ├── Card.tsx
+│   │   └── StatCard.tsx
+│   ├── admin/
+│   │   ├── AdminLoginScreen.tsx        ← NOVO
+│   │   ├── AdminLayout.tsx             ← REDUZIDO
+│   │   ├── TherapistModal.tsx          ← NOVO
+│   │   └── PatientModal.tsx            ← NOVO
+│   └── therapist/
+│       ├── LoginScreen.tsx             ← NOVO
+│       ├── SetPasswordScreen.tsx       ← NOVO
+│       ├── OnboardingScreen.tsx        ← NOVO
+│       └── TherapistLayout.tsx         ← REDUZIDO
+├── pages/
+│   ├── admin/
+│   │   ├── Therapists.tsx              ← REDUZIDO
+│   │   ├── Patients.tsx                ← REDUZIDO
+│   │   └── (demais inalterados)
+│   └── therapist/
+│       ├── MyProfile.tsx               ← USA CONSTANTS
+│       └── (demais inalterados)
+```
 
 ---
 

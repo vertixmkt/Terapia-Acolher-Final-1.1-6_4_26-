@@ -234,6 +234,17 @@ export const leadReplenishments = mysqlTable('lead_replenishments', {
   resolved_at: timestamp('resolved_at'),
 })
 
+// ─── Password Reset Tokens ───────────────────────────────────────────────────
+
+export const passwordResetTokens = mysqlTable('password_reset_tokens', {
+  id: int('id').primaryKey().autoincrement(),
+  therapist_id: int('therapist_id').notNull(),
+  token: varchar('token', { length: 64 }).notNull().unique(),
+  expires_at: timestamp('expires_at').notNull(),
+  used: boolean('used').default(false),
+  created_at: timestamp('created_at').defaultNow(),
+})
+
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const therapistsRelations = relations(therapists, ({ many }) => ({
